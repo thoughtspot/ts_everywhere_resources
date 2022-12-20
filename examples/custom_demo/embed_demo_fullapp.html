@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<!--
+  Extremely simple ThoughtSpot Embed framework, meant to take the code from the playground
+-->
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'/>
+    <title>ThoughtSpot Embed Test</title>
+    <style>
+        body {
+            margin: 0px;
+            padding: 0px;
+        }
+        div {
+            /*border: 1px dashed black;
+            /*margin: 4px;
+            padding: 10px;*/
+        }
+
+        #embed {
+            /*height: 800px;
+            min-width: 600px;*/
+            height: 100%;
+            width: 100%;
+            min-height: 800px;
+        }
+
+        body {
+            background-color: rgb(250, 250, 250);
+            font-family: sans-serif;
+        }
+
+
+        #no-data {
+            display: none;
+        }
+
+        /* https://www.w3schools.com/howto/howto_css_modals.asp */
+        /* The Modal (background) */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 4; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            min-height: 600px;
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        /* Modal Content/Box */
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Could be more or less, depending on screen size */
+        }
+
+        /* The Close Button */
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        #floatingButton {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 5; /* Sit on top */
+            left: 650px;
+            top: 35px;
+           /* width: 100%; /* Full width */
+           /* height: 100%; /* Full height */
+           /* min-height: 600px;
+            overflow: auto; /* Enable scroll if needed */
+           /* background-color: rgb(0,0,0); /* Fallback color */
+           /* background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        #topMenu {
+            background-color: black;
+            width: 100%;
+            margin: 0px;
+            padding: 10px 5px 5px 5px;
+            color: white;
+        }
+
+        a {
+            color: white;
+            text-decoration: none;
+        }
+        a:visited {
+            color: green;
+        }
+        
+        button {
+            font-size: 0.8em;
+
+        }
+    </style>
+    
+</head>
+
+<body>
+
+<!-- Custom Top Menu -->    
+<div id='topMenu'>
+    <h2>Custom Top Menu --> <a href='#'>Home</a> | <a href='#'>Reports</a> | &nbsp; <button id='topMenuButton'>Action Button</button></h2>
+</div>
+    
+      <!-- Floating button -->
+     <!-- <div id='floatingButton' >
+    <button class='buttonAbove'>Button From Wrapper</button>
+</div>-->
+
+    <!--<div id='header'><h1>Test of ThoughtSpot Embed</h1></div>-->
+    <div id='page-content-div' style='display: flex;'>
+        <div id='main-content-div' style='flex: 3 3 0;'>
+            <!-- This div will show before the ThoughtSpot content has loaded -->
+            <div id="loader"><h1 id='loaderMsg'>Custom Loading screen in this div</h1></div>
+            <!-- This div will show if no data comes though / error in loading -->
+            <div id="no-data">No data came through!</div>
+            <!-- DIV that contains the actual embeded ThoughtSpot content -->
+            <div id='embed' style='opacity: 0;'></div>
+        </div>
+</div>
+<!-- from https://www.w3schools.com/howto/howto_css_modals.asp -->
+<!-- The Modal -->
+<!--<div id="myModal" class="modal">
+
+    <!-- Modal content -->
+ <!--   <div class="modal-content">
+      <span class="close">&times;</span>
+      <iframe src="https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d110155.28199109646!2d-97.72072970930887!3d30.369345053008193!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1st-mobile%20store%20near%20me!5e0!3m2!1sen!2sus!4v1638467549208!5m2!1sen!2sus" width="800" height="600" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+    </div>
+  
+</div>-->
+
+<!-- Example of hidden modal window that can overlay ON TOP of the FullApp embed when reacting to events, or 
+     from other UI elements that part of the 'embedding page'
+-->
+<div id="myModal2" class="modal">
+
+    <!-- Modal content, pop-up on a custom action. Doesn't actually DO anything when the buttons are pressed -->
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <!-- Header of the modal, change to what feels appropriate -->
+        <h3>Change Status of Items</h3>
+
+        <p>Items to change:</p>
+        <textarea style="height: 100px; width: 450px;" id="modal-textarea"></textarea>
+        <p>
+        <input type="radio" id="html" name="fav_language" value="HTML">
+        <label for="html">Yes</label>
+        <input type="radio" id="css" name="fav_language" value="CSS">
+        <label for="css">No</label>
+        <input type="radio" id="javascript" name="fav_language" value="JavaScript">
+        <label for="javascript">Undetermined</label>
+        
+        <p><button onclick='document.getElementById("myModal2").style.display="none";'>Cancel</button> <button onclick='document.getElementById("myModal2").style.display="none";'>Change Status</button></p>
+      </div>
+  
+</div>
+
+
+
+<!-- Put the ThoughtSpot EmbedSDK script down here so it runs after the page loads fully -->
+<script type='module'>
+    let tsHost = "https://{}";
+    let pId = "9a16fe2f-7d13-42fc-b27f-e0095da678ed";
+// Import ThoughtSpot SDK
+import {
+  init,
+  AppEmbed,
+  Action,
+  RuntimeFilterOp,
+  EmbedEvent,
+  HostEvent,
+  AuthType,
+  Page
+} from 'https://cdn.jsdelivr.net/npm/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
+// import "./styles.css";
+
+/*
+* Would be built out if using Trusted Authentication for single sign-on
+*/
+function tokenCallbackFunc(){
+    console.log('tokenCallback fires');
+    return 'not-a-token';
+}
+
+console.log('About to init the embed');
+
+/* 
+* Initialize embed configuration
+* If doing a 'full page' FullApp embed, you can leave AuthType.None and just have people use ThoughtSpot direct sign-in
+* But if they are using SAML or OIDC, you'll want to use either AuthType.SAMLRedirect or AuthType.OIDCRedirect (per https://developers.thoughtspot.com/docs/?pageid=embed-auth)
+*/
+init({
+  thoughtSpotHost: tsHost,
+   authType: AuthType.None
+  //authType: AuthType.AuthServer,
+  //username: tsUsername, // Username as a string, required for Trusted Auth to work
+  //getAuthToken: tokenCallbackFunc  // Callback function returning the token as a string
+});
+
+// Instantiate class for embedding a FullAppEmbed
+/*
+* The potential pageId values are defined under https://developers.thoughtspot.com/docs/?pageid=full-embed#_create_an_instance_of_the_appembed_object
+* You can also load up to a direct 'path' to a page using the path: attribute
+* A more complete version beyond a demo would define some form of URL parameters that could be read to allow
+* bookmarking to load various pages within the embed in a more permanent way
+*/
+const embed = new AppEmbed("#embed", {
+    pageId: Page.Home,
+    // path: '/path/to/page'
+    showPrimaryNavbar: true, // You can make your own navbar using the pageIds, but useful to turn on for testing
+    frameParams: {
+        height: '100%',
+        width: '100%'
+    },
+
+    // datasources : [],
+    /*param-start-modifyActions*/
+    disabledActions: [],
+    disabledActionReason: "Reason for disabling",
+    hiddenActions: []
+    //hideResults: true
+/*param-end-modifyActions*/
+     //frameParams : { width: '500px', height: '250px'},
+     //defaultHeight: '1000px'
+     //fullHeight: false
+    /*param-start-runtimeFilters*//*param-end-runtimeFilters*/
+});
+
+hideNoDataImage();
+
+function showSSOFailedMsg(){
+    let loadMsgElement = document.getElementById('loaderMsg');
+    loadMsgElement.innerText = 'Sign-in failed, nothing for you!';
+}
+
+function tsSessionTimeoutCleanup(){
+    let tsEmbedDiv = document.getElementById('embed');
+    tsEmbedDiv.style.display = 'none';
+}
+
+function showCookieSettingsMsg(){
+
+}
+
+function showGenericErrorMsg(response){
+    console.log('Error event fires');
+    console.log(response);
+}
+
+let tsLoggedIn = false;
+
+/*
+* The following attaches various EmbedEvent listeners
+* Overview article: https://developers.thoughtspot.com/docs/?pageid=events-app-integration
+* Full reference for all events: https://developers.thoughtspot.com/docs/?pageid=events 
+*/
+embed
+    .on(EmbedEvent.Init, showLoader)
+    .on(EmbedEvent.NoCookieAccess, showCookieSettingsMsg)
+    .on(EmbedEvent.AuthInit, (response) => {
+        console.log('AuthInit event fires');
+        console.log(response);
+        // Set that AuthInit has fired
+        tsLoggedIn = true;
+        // authInit returns object -> {type: 'authInit', data: {userGuid: <guid>} } }
+        let userGUID = response.data.userGuid;
+        hideLoader();
+    } )
+    .on(EmbedEvent.AuthExpire, (response) => {
+        console.log('AuthExpire event fires');
+        console.log(response);
+        // Handle if session dies while content shows
+        if (tsLoggedIn == true){
+            tsSessionTimeoutCleanup();
+        }
+        else {
+            // Display custom message if SSO issues
+            showSSOFailedMsg();
+        }
+    } )
+    .on(EmbedEvent.Error, showGenericErrorMsg)
+    /*param-start-customActionHandle*//*param-end-customActionHandle*/
+    .on(EmbedEvent.Alert, (response) => {
+        console.log("Alert event fires");
+        console.log(response);
+    })
+    // Fires when there is a change within FullApp, can be used to update a variable in the URL, for bookmarking
+    .on(EmbedEvent.RouteChange, (response) => {
+        console.log("RouteChange fires");
+        console.log(response);
+    })
+    .on(EmbedEvent.DataSourceSelected, (response) => {
+        console.log('DataSourceSelected event fires');
+        console.log(response);
+        hideLoader();
+        let dataSources = response.data;
+        
+        if (dataSources.length === 0){
+            console.log("No data sources have been selected");
+        }
+        else{
+            console.log("Selected Data Sources: ");
+            console.log(dataSources);
+        }
+    } )
+    .on(EmbedEvent.Data, (response) => {
+        console.log('Data event fires');
+        console.log(response);
+    } )
+    .on(EmbedEvent.QueryChanged, (response) => {
+        console.log('QueryChanged event fires');
+        console.log(response);
+        // You could trigger the HostEvent.GetTML here
+        // to get the current TML Search String of a SearchEmbed component
+        // This event does not fire off in a Liveboard currently
+    } )
+    // Listener for various custom actions triggered from within ThoughtSpot
+    .on(EmbedEvent.CustomAction, (response) => {
+        console.log('CustomAction event fires');
+        console.log(response);
+        const data = response.data;
+        // Different Custom Actions will ahve different IDs, you can distinguish via response.id
+        if (response.id === 'create-jira'){
+            let dataObj = JSON.parse(data);
+            console.log(dataObj);
+            let finalText = "ID1\nID2\nID3\nID4";
+            /*for (let i=0, len=dataObj.selectedPoints.length; i<len; i++){
+                let point = dataObj.selectedPoints[0];
+                let val1 = point.selectedAttributes[0].value;
+                let val2 = point.selectedMeasures[0].value;
+
+                finalText += val1 + "\n";
+            }*/
+            document.getElementById('modal-textarea').value = finalText;
+            // Display the modal box
+            modal.style.display = "block";
+            //return modal;
+        // Display the modal box
+        //modal.style.display = "block";
+        //return modal;
+        }
+    } )
+    // Drilldown event may change the state of a given viz. In SearchEmbed, GetTML will be updated
+    // on a Liveboard, you may want to consider if Drilldown has fire to know what to respond with
+    .on(EmbedEvent.Drilldown, (response) => {
+        console.log('Drilldown event fires');
+    })
+    // Renders the FullApp embed after all event listeners are attached
+    .render()
+    
+   //.render();
+
+// Trigger the new HostEvent.GetTML
+function getCurrentTML(){
+    console.log('Triggering HostEvent.GetTML');
+    embed.trigger(HostEvent.GetTML).then( (response) => {
+        console.log('GetTML returns:');
+        console.log(response);
+        console.log('TML Search String:');
+        let tmlSearchQuery = response.answer.search_query;
+        console.log(tmlSearchQuery);
+        // You can then use the tmlSearchQuery with the Search Data REST API
+    });
+}
+// Assign to click of the Top Bar Button. You could instead have the code run from a given Cum Action
+document.getElementById('topMenuButton').onclick = getCurrentTML;
+
+// Functions to show and hide a loader while iframe loads
+function showLoader(response) {
+  document.getElementById("loader").style.display = "block";
+  console.log("Init event fires");
+  console.log("Loader is being shown");
+  console.log(response);
+}
+
+function hideLoader(response) {
+  document.getElementById("loader").style.display = "none";
+  console.log("Load event fires");
+  console.log('Loader is being hidden');
+  console.log(response);
+  let embedDiv = document.getElementById('embed');
+  embedDiv.style.opacity = '100%';
+  // Added button
+  document.getElementById("floatingButton").style.display = 'block';
+  //embedDiv.style.width = '800px';
+  // exampleRestApiCall();
+}
+
+// Functions to show or hide No data images
+
+function showNoDataImage() {
+  document.getElementById("no-data").style.display = "block";
+}
+function hideNoDataImage() {
+  document.getElementById("no-data").style.display = "none";
+}
+
+</script>
+
+<script>
+    // Get the modal
+    var modal = document.getElementById("myModal2");
+
+    // Get the button that opens the modal
+    var btn = document.getElementById("myBtn");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    // When the user clicks on the button, open the modal
+    //btn.onclick = function() {
+    //modal.style.display = "block";
+    //}
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+    modal.style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
+</script>
+</body>
