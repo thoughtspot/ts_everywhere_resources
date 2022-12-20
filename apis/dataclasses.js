@@ -366,11 +366,11 @@ export class LiveboardContextActionData extends TabularData {
       const columnNames = [];
       const columnValues = [];
 
-      // The actual data is stored in
       // jsonData.data.contextMenuPoints.[deselectedAttributes|deselectedMeasures|selectedAttributes|selectedMeasures]
       // This approach means attributes will always come first and then measures.  This gets all values in the row.
+      let clickedPoint = isV1 ? jsonData.clickedPoint : jsonData.contextMenuPoints.clickedPoint;
       for (let section of ["selectedAttributes", "deselectedAttributes", "selectedMeasures", "deselectedMeasures"]) {
-        for (let column of jsonData.clickedPoint[section]) {
+        for (let column of clickedPoint[section]) {
           const columnName = column.column.name;
           columnNames.push(columnName);
           columnValues.push([column.value]);
