@@ -466,7 +466,11 @@ embed
                 // You might detect any Selection / Context Menu conversion for additional filtering here
             }
 
-            vizTmlSearchString = getCurrentTmlSearchString();
+             getCurrentTmlSearchString().then( vizTmlSearchString => { 
+                console.log("Final vizTmlSearchString to be used with Search Data API: ", vizTmlSearchString);
+                modal.style.display = "block";
+                callSearchDataApi(vizTmlSearchString, tsAppState.currentDatasources[0]);
+             });
             // Possibly add in filters created from selection
 
         }
@@ -534,17 +538,19 @@ embed
             // Display a modal dialog box
             modal.style.display = "block";
             console.log("About to build the Viz TML from the parts:");
-            vizTmlSearchString = buildCurrentVizOnLiveboardTML(tsAppState.objectId, vizId, liveboardFiltersToConvert, [], null);
-        }
-        console.log(vizTmlSearchString);
-        // Once you've got the TML Search string, you can call the Search Data REST API
-        if (vizTmlSearchString != null){
-            if(vizTmlSearchString != ""){
+            buildCurrentVizOnLiveboardTML(tsAppState.objectId, vizId, liveboardFiltersToConvert, [], null).then( vizTmlSearchString => { 
                 console.log("Final vizTmlSearchString to be used with Search Data API: ", vizTmlSearchString);
                 modal.style.display = "block";
                 callSearchDataApi(vizTmlSearchString, tsAppState.currentDatasources[0]);
-            }
+             });
         }
+        /*console.log(vizTmlSearchString);
+        // Once you've got the TML Search string, you can call the Search Data REST API
+        if (vizTmlSearchString != null){
+            if(vizTmlSearchString != ""){
+
+            }
+        }*/
 
     } )
     // Listener for VizPointClick event (equivalent of Context Menu Custom Action without menu selection)
@@ -659,7 +665,7 @@ function getCurrentTmlSearchString(){
     console.log('Triggering HostEvent.GetTML');
     // Currently because only Search/Answer has HostEvent.GetTML
     if (tsAppState.pageType == 'answer' || tsAppState.pageType == 'Search'){
-        embed.trigger(HostEvent.GetTML).then( (response) => {
+        return embed.trigger(HostEvent.GetTML).then( (response) => {
             console.log('GetTML returns:');
             console.log(response);
             console.log('TML Search String:');
@@ -865,7 +871,7 @@ function buildCurrentVizOnLiveboardTML(liveboardId, vizId, lbFilters, runtimeFil
             let vizTable = selectedViz.answer.tables[0];
             console.log("Viz Data Source info: ", vizTable);
             // Update the App State with the data source of the Viz
-            tsAppState.currentDatasources = [vizTable];
+            tsAppState.currentDatasources = [vizTable.fqn];
             // 4. Grab the search_query property
             let vizTmlSearchString = selectedViz.answer.search_query;
             console.log("TML Search String for Viz from saved TML: ", vizTmlSearchString);
