@@ -14,7 +14,8 @@ import {
   Page,
   RuntimeFilterOp,
   SearchEmbed,
-} from 'https://unpkg.com/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
+} from './tsembed.es.js';
+// } from 'https://unpkg.com/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
 
 import {getSearchData} from "./rest-api.js";
 import {LiveboardContextActionData} from "./dataclasses.js";
@@ -36,14 +37,13 @@ const onLogin = () => {
   });
 
   hideDiv('login');
-  showDiv('landing-page');
+  showMainApp();
 }
 
 const showMainApp = () => {
   // Clears out the page and shows the main app.
   // This can be called from any page to make sure the state is correct.
   clearEmbed(); // just to be sure.
-  hideDiv('landing-page');
   showDiv('main-app');
 }
 
@@ -77,8 +77,8 @@ const onLiveboard = () => {
 
   const embed = new LiveboardEmbed("#embed", {
       frameParams: {},
-      liveboardV2: false,
-      pinboardId: "9c3d26af-cf1b-4e89-aa42-f60d34983827",  // TODO - set to your liveboard ID.
+      liveboardV2: true,
+      liveboardId: "fda23eef-4edc-4a1a-884c-1570d2b3b079",  // TODO - set to your liveboard ID.
       disabledActions: [Action.DownloadAsPdf],
       disabledActionReason: 'Enterprise feature.',
       hiddenActions: [Action.LiveboardInfo]
@@ -92,9 +92,9 @@ const onVisualization = () => {
 
   const embed = new LiveboardEmbed("#embed", {
     frameParams: {},
-    liveboardV2: false,
-    liveboardId: "9c3d26af-cf1b-4e89-aa42-f60d34983827",
-    vizId: "9564b208-39b9-4349-9f06-3c989a9e1863",
+    liveboardV2: true,
+    liveboardId: "fda23eef-4edc-4a1a-884c-1570d2b3b079",  // TODO - set to your liveboard ID.
+    vizId: "dcbf0121-dc91-40ae-9a5c-e480d47eebfa",
   });
 
   embed.render();
@@ -184,13 +184,6 @@ document.getElementById('ts-url').innerText = 'ThoughtSpot Server: ' + tsURL;
 // Hook up the events to the buttons and links.
 document.getElementById('login-button').addEventListener('click', onLogin);
 //document.getElementById('close-modal').addEventListener('click', closeModal);
-
-// Events for buttons
-document.getElementById('search-button').addEventListener('click', onSearch);
-document.getElementById('liveboard-button').addEventListener('click', onLiveboard);
-document.getElementById('viz-button').addEventListener('click', onVisualization);
-document.getElementById('full-app-button').addEventListener('click', onFull);
-document.getElementById('custom-action-button').addEventListener('click', onCustomAction);
 
 // Events for nav bar
 document.getElementById('search-link').addEventListener('click', onSearch);

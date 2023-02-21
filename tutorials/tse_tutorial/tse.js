@@ -14,7 +14,8 @@ import {
   Page,
   RuntimeFilterOp,
   SearchEmbed,
-} from 'https://unpkg.com/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
+} from './tsembed.es.js';
+// } from 'https://unpkg.com/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
 
 import {getSearchData} from "./rest-api.js";
 import {LiveboardContextActionData} from "./dataclasses.js";
@@ -33,14 +34,13 @@ const onLogin = () => {
   // TODO add the init() to set up the SDK interface.
 
   hideDiv('login');
-  showDiv('landing-page');
+  showMainApp();
 }
 
 // Clears out the page and shows the main app.
 // This can be called from any page to make sure the state is correct.
 const showMainApp = () => {
   clearEmbed(); // just to be sure.
-  hideDiv('landing-page');
   showDiv('main-app');
 }
 
@@ -123,13 +123,6 @@ document.getElementById('ts-url').innerText = 'ThoughtSpot Server: ' + tsURL;
 
 // Hook up the events to the buttons and links.
 document.getElementById('login-button').addEventListener('click', onLogin);
-
-// Events for buttons
-document.getElementById('search-button').addEventListener('click', onSearch);
-document.getElementById('liveboard-button').addEventListener('click', onLiveboard);
-document.getElementById('viz-button').addEventListener('click', onVisualization);
-document.getElementById('full-app-button').addEventListener('click', onFull);
-document.getElementById('custom-action-button').addEventListener('click', onCustomAction);
 
 // Events for nav bar
 document.getElementById('search-link').addEventListener('click', onSearch);
