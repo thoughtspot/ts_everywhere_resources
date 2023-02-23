@@ -219,9 +219,8 @@ export class ActionData extends TabularData {
 }
 
 /**
- * This class handles data from liveboard visualizations where the action was from the main menu or main action.
+ * This class handles data from Liveboard visualizations where the action was from the main menu or main action.
  * It does not work for Search/Answer visualizations or context menus.
- * This action refers to visualization level custom actions, not liveboard level.
  */
 export class LiveboardActionData extends TabularData {
 
@@ -232,55 +231,30 @@ export class LiveboardActionData extends TabularData {
    * @returns {LiveboardActionData}
    */
   static createFromJSON(jsonData) {
-
-    let isV1 = true;
-
-    // Handle differences between liveboard v1 and v2.
-    if (typeof jsonData.data === 'string' || jsonData.data instanceof String) {
-        jsonData = JSON.parse(jsonData.data);
-        isV1 = true;
-    }
-    else {
-      jsonData = jsonData.data;
-      isV1 = false;
-    }
-
+    jsonData = JSON.parse(jsonData);
     const liveboardActionData = new LiveboardActionData(jsonData);
 
     try {
-      const columnNames = [];
-      const data = [];
 
-      if (isV1) {
-        const reportBookData = getValues(jsonData.reportBookData)[0]; // assume there's only one.
-        const vizData = getValues(reportBookData.vizData)[0]; // assume there's only one.
+      const reportBookData = getValues(jsonData.reportBookData)[0]; // assume there's only one.
+      const vizData = getValues(reportBookData.vizData)[0]; // assume there's only one.
 
-        // Get the column meta information.
-        const columns = vizData.dataSets.PINBOARD_VIZ.columns;
-        const nbrCols = columns.length;
-        for (let colCnt = 0; colCnt < nbrCols; colCnt += 1) {
-          columnNames.push(columns[colCnt].column.name);
-        }
-
-        // can come in two flavors, so need to get the right data
-        const dataSet = (Array.isArray(vizData.dataSets.PINBOARD_VIZ.data))
-          ? vizData.dataSets.PINBOARD_VIZ.data[0].columnDataLite
-          : vizData.dataSets.PINBOARD_VIZ.data.columnDataLite;
-
-        for (let cnt = 0; cnt < columnNames.length; cnt++) {
-          data.push(dataSet[cnt].dataValue);  // should be an array of columns values.
-        }
+      let columnNames = [];
+      // Get the column meta information.
+      const columns = vizData.dataSets.PINBOARD_VIZ.columns;
+      const nbrCols = columns.length;
+      for (let colCnt = 0; colCnt < nbrCols; colCnt += 1) {
+        columnNames.push(columns[colCnt].column.name);
       }
-      else { // is v2
-        const columns = jsonData.embedAnswerData.columns;
-        const nbrCols = columns.length;
-        for (let colCnt = 0; colCnt < nbrCols; colCnt++) {
-          columnNames.push(columns[colCnt].column.name);
-        }
-        for (let colCnt = 0; colCnt < nbrCols; colCnt++) {
-          // The data is alwasy under 0 for what we want.
-          data.push(jsonData.embedAnswerData.data[0].columnDataLite[colCnt].dataValue);
-        }
+
+      // can come in two flavors, so need to get the right data
+      const dataSet = (Array.isArray(vizData.dataSets.PINBOARD_VIZ.data))
+        ? vizData.dataSets.PINBOARD_VIZ.data[0].columnDataLite
+        : vizData.dataSets.PINBOARD_VIZ.data.columnDataLite;
+
+      const data = [];
+      for (let cnt = 0; cnt < columnNames.length; cnt++) {
+        data.push(dataSet[cnt].dataValue);  // should be an array of columns values.
       }
 
       liveboardActionData.columnNames = columnNames;
@@ -346,19 +320,7 @@ export class LiveboardContextActionData extends TabularData {
    * @returns {LiveboardContextActionData}
    */
   static createFromJSON(jsonData) {
-
-    let isV1 = true;  // Different data structures.
-
-    // Handle differences between liveboard v1 and v2.
-    if (typeof jsonData.data === 'string' || jsonData.data instanceof String) {
-        jsonData = JSON.parse(jsonData.data);
-        isV1 = true;
-    }
-    else {
-      jsonData = jsonData.data;
-        isV1 = false;
-    }
-
+    //jsonData = JSON.parse(jsonData.data);
     const contextActionData = new LiveboardContextActionData();
 
     try {
@@ -366,11 +328,11 @@ export class LiveboardContextActionData extends TabularData {
       const columnNames = [];
       const columnValues = [];
 
+      // The actual data is stored in
       // jsonData.data.contextMenuPoints.[deselectedAttributes|deselectedMeasures|selectedAttributes|selectedMeasures]
       // This approach means attributes will always come first and then measures.  This gets all values in the row.
-      let clickedPoint = isV1 ? jsonData.clickedPoint : jsonData.contextMenuPoints.clickedPoint;
       for (let section of ["selectedAttributes", "deselectedAttributes", "selectedMeasures", "deselectedMeasures"]) {
-        for (let column of clickedPoint[section]) {
+        for (let column of jsonData.data.contextMenuPoints.clickedPoint[section]) {
           const columnName = column.column.name;
           columnNames.push(columnName);
           columnValues.push([column.value]);
@@ -463,50 +425,6 @@ export class SearchData extends TabularData {
 }
 
 /**
- * Creates a new get answer data object.  
- * This data format comes from the payload.answerService.fetchData(offset, batchSize) call from custom actions.
- */
-export class GetAnswerData extends TabularData {
-
-  /**
-   * Creats a new get answer data object.
-   * @param jsonData The response  from a payload.answerService.fetchData(offset, batchSize)
-   */
-  static createFromJSON(jsonData) {
-    const getAnswerData = new GetAnswerData(jsonData);
-    try {
-      let viz;
-      for (const v of jsonData.getAnswer.answer.visualizations) {  // visualizations is an array
-        console.log(v);
-        // Assuming that the fist visualization with data is the one we want.
-        if (v.hasOwnProperty('data')) {
-          // get the column name.s
-          const colNames = [];
-          for (const c of v.columns) {
-            colNames.push(c.column.name);
-          }
-          getAnswerData.columnNames = colNames;
-
-          // get the data values.
-          const columnValues = []
-          for (const d of v.data[0].columnDataLite) {
-             const columnData = JSON.parse(d.dataValue);
-             columnValues.push(columnData);
-          }
-          getAnswerData.populateDataByColumn(columnValues);
-        }
-      }
-    } catch (error) {
-      console.error(`Error creating get answer data: ${error}`);
-      console.error(jsonData);
-    }
-
-    return getAnswerData;
-  }
-
-}
-
-/**
  * Converts a tabular data object to an HTML table for display.
  * @param tabularData
  * @returns {string}
@@ -549,12 +467,7 @@ export const tabularDataToCSV = (tabularData) => {
   // get the data as a table and add it to the CSV.
   const data = tabularData.getDataAsTable();
   for (let rnbr = 0; rnbr < tabularData.nbrRows; rnbr++) {
-    const row = data[rnbr].map(d => {
-      if (typeof d === 'string' || d instanceof String) {
-        return d.replaceAll('"', '""'); // convert quotes for embedding
-      }
-      else return d;
-    })
+    const row = data[rnbr].map(d => d.replaceAll('"', '""')); // convert quotes for embedding
     csv += '"' + row.join('","') + '"\n';
   }
 

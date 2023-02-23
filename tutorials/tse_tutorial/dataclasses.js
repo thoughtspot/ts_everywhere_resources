@@ -320,7 +320,7 @@ export class LiveboardContextActionData extends TabularData {
    * @returns {LiveboardContextActionData}
    */
   static createFromJSON(jsonData) {
-    jsonData = JSON.parse(jsonData.data);
+    //jsonData = JSON.parse(jsonData.data);
     const contextActionData = new LiveboardContextActionData();
 
     try {
@@ -332,7 +332,7 @@ export class LiveboardContextActionData extends TabularData {
       // jsonData.data.contextMenuPoints.[deselectedAttributes|deselectedMeasures|selectedAttributes|selectedMeasures]
       // This approach means attributes will always come first and then measures.  This gets all values in the row.
       for (let section of ["selectedAttributes", "deselectedAttributes", "selectedMeasures", "deselectedMeasures"]) {
-        for (let column of jsonData.clickedPoint[section]) {
+        for (let column of jsonData.data.contextMenuPoints.clickedPoint[section]) {
           const columnName = column.column.name;
           columnNames.push(columnName);
           columnValues.push([column.value]);
