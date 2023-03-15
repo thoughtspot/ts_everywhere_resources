@@ -85,6 +85,9 @@ const onCustomAction = () => {
 
 // Updates the global filterValues array, then re-runs the embedLiveboard to reload the original Liveboard with the updated values in the runtimeFilters
 const filterData = (embed, payload) => {
+  if (typeof payload.data === 'string' || payload.data instanceof String) {
+    payload.data = JSON.parse(payload.data);
+  }
   const actionData = LiveboardContextActionData.createFromJSON(payload);
   const columnNameToFilter = actionData.columnNames[0];
   const filterValues = [];
