@@ -41,9 +41,8 @@ const onLogin = () => {
 }
 
 const showMainApp = () => {
-  // Clears out the page and shows the main app.
+  // Shows the main app.
   // This can be called from any page to make sure the state is correct.
-  clearEmbed(); // just to be sure.
   showDiv('main-app');
 }
 
@@ -123,14 +122,14 @@ const onCustomAction = () => {
 
   const embed = new LiveboardEmbed("#embed", {
     frameParams: {},
-    liveboardV2: false,
+    liveboardV2: true,
     pinboardId: "b504e160-3025-4508-a76a-1beb1f4b5eed",
   });
 
   embed
   .on(EmbedEvent.CustomAction, (payload) => {
     // The id is defined when creating the Custom Action in ThoughtSpot. Checking id attribute allows correct routing of multiple Custom Actions
-    if (payload.id === 'filter-content') {
+    if (payload.id === 'filter-content' || payload.data.id === 'filter-content') {
       filterData(embed, payload);
     }
   })
@@ -139,9 +138,6 @@ const onCustomAction = () => {
 
 // Updates the global filterValues array, then re-runs the embedLiveboard to reload the original Liveboard with the updated values in the runtimeFilters
 const filterData = (embed, payload) => {
-  if (typeof payload.data === 'string' || payload.data instanceof String) {
-    payload.data = JSON.parse(payload.data);
-  }
   const actionData = LiveboardContextActionData.createFromJSON(payload);
   const columnNameToFilter = actionData.columnNames[0];
   const filterValues = [];
