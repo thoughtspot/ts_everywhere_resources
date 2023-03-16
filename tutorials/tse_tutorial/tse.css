@@ -54,6 +54,14 @@ h1 {
   background-color: #EAEDF2;
 }
 
+.instructions {
+  color: rgb(28,78,169); 
+  font-weight: bold;
+  font-size: larger;
+  padding-left: 20px;
+  padding-top: 73px;
+}
+
 .sidenav {
   left: 0;
   background-color: white;
