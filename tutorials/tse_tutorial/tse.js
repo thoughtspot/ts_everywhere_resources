@@ -27,10 +27,6 @@ const tsURL = "https://training.thoughtspot.cloud";
 // Create and manage the login screen.
 const onLogin = () => {
   // TODO add the init() to set up the SDK interface.
-  init({
-    thoughtSpotHost: tsURL,
-    authType: AuthType.None,
-  });
 
   hideDiv('login');
   showMainApp();
@@ -47,53 +43,25 @@ const showMainApp = () => {
 const onSearch = () => {
   showMainApp();
 
-    const embed = new SearchEmbed("#embed", {
-    frameParams: {},
-    collapseDataSources: true,
-    disabledActions: [Action.Download, Action.DownloadAsCsv],
-    disabledActionReason: "Enterprise feature",
-    hiddenActions: [Action.Share],
-    dataSources: ["1b1c237d-9de8-4542-bf1f-0c3157ddb8d2"],
-    searchOptions: {
-      searchTokenString: '[sales] [product type]',
-      executeSearch: true,
-    },
-  });
-
-  embed
-    .on(EmbedEvent.CustomAction, payload => {  // shows the payload for any custom action.
-        showPayload(payload);
-    })
-    .render();
+  // TODO replace the following with a SearchEmbed component and render.
+  document.getElementById("embed").innerHTML = "<p class='warning'>Search not yet embedded.</p>";
 
 }
 
 const onLiveboard = () => {
   showMainApp();
 
-  const embed = new LiveboardEmbed("#embed", {
-      frameParams: {},
-      liveboardV2: true,
-      liveboardId: "fda23eef-4edc-4a1a-884c-1570d2b3b079",  // TODO - set to your liveboard ID.
-      disabledActions: [Action.DownloadAsPdf],
-      disabledActionReason: 'Enterprise feature.',
-      hiddenActions: [Action.LiveboardInfo]
-  });
+  // TODO replace the following with a LiveboardEmbed component and render.
+  document.getElementById("embed").innerHTML = "<p class='warning'>Liveboard not yet embedded.</p>";
 
-  embed.render();
 }
 
 const onVisualization = () => {
   showMainApp();
 
-    const embed = new LiveboardEmbed("#embed", {
-    frameParams: {},
-    liveboardV2: true,
-    liveboardId: "fda23eef-4edc-4a1a-884c-1570d2b3b079",  // TODO - set to your liveboard ID.
-    vizId: "dcbf0121-dc91-40ae-9a5c-e480d47eebfa",
-  });
+  // TODO replace the following with a LiveboardEmbed component and render.
+  document.getElementById("embed").innerHTML = "<p class='warning'>Visualization not yet embedded.</p>";
 
-  embed.render();
 }
 
 // Embed the full application.
@@ -104,24 +72,12 @@ const onFull = () => {
   document.getElementById("embed").innerHTML = "<p class='warning'>Full app not yet embedded.</p>";
 }
 
-// Embed a custom action.
+// Embed with a custom action.
 const onCustomAction = () => {
   showMainApp();
 
   // TODO replace the following with an AppEmbed component for showing a popup.
-  //document.getElementById("embed").innerHTML = "<p class='warning'>Custom action not yet embedded.</p>";
-  const embed = new LiveboardEmbed("#embed", {
-    liveboardId: "e40c0727-01e6-49db-bb2f-5aa19661477b",
-    vizId: "8d2e93ad-cae8-4c8e-a364-e7966a69a41e",
-  });
-
-  embed
-    .on(EmbedEvent.CustomAction, payload => {
-      if (payload.id === 'show-details' || payload.data.id === 'show-details') {
-        showDetails(payload);
-      }
-    })
-    .render();
+  document.getElementById("embed").innerHTML = "<p class='warning'>Custom action not yet embedded.</p>";
 }
 
 // Show a pop-up with the product sales for the state selected.
@@ -132,16 +88,7 @@ const showDetails = (payload) => {
   const filter = pinboardContextData.data[pinboardContextData.columnNames[0]];
 
   // Now show the details with the filter applied in a popup.
-  const popupEmbed = new LiveboardEmbed("#show-details", {
-    liveboardId: "e40c0727-01e6-49db-bb2f-5aa19661477b",
-    vizId: "96db6db8-662a-45b5-bc70-00341d75846b",
-    runtimeFilters: [{
-      columnName: 'state',
-      operator: RuntimeFilterOp.EQ,
-      values: [filter]
-    }],
-  });
-  popupEmbed.render();
+  // TODO - add the code to show the popup with the runtime filter.
 
   // display the model box.
   const detailsElement = document.getElementById('show-data');
