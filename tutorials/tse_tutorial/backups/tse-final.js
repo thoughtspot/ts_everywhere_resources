@@ -9,7 +9,6 @@ import {
   AppEmbed,
   AuthType,
   EmbedEvent,
-  HostEvent,
   LiveboardEmbed,
   Page,
   RuntimeFilterOp,
@@ -17,7 +16,6 @@ import {
 } from './tsembed.es.js';
 // } from 'https://unpkg.com/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
 
-import {getSearchData} from "./rest-api.js";
 import {LiveboardContextActionData} from "./dataclasses.js";
 
 // TODO - set the following for your URL.
@@ -116,39 +114,48 @@ const onFull = () => {
   embed.render();
 }
 
-// Embed a custom action.
+// Embed with a custom action.
 const onCustomAction = () => {
   showMainApp();
 
   const embed = new LiveboardEmbed("#embed", {
-    frameParams: {},
-    liveboardV2: true,
-    pinboardId: "b504e160-3025-4508-a76a-1beb1f4b5eed",
+    liveboardId: "e40c0727-01e6-49db-bb2f-5aa19661477b",
+    vizId: "8d2e93ad-cae8-4c8e-a364-e7966a69a41e",
   });
 
   embed
-  .on(EmbedEvent.CustomAction, (payload) => {
-    // The id is defined when creating the Custom Action in ThoughtSpot. Checking id attribute allows correct routing of multiple Custom Actions
-    if (payload.id === 'filter-content' || payload.data.id === 'filter-content') {
-      filterData(embed, payload);
-    }
-  })
-  .render();
+    .on(EmbedEvent.CustomAction, payload => {
+      if (payload.id === 'show-details' || payload.data.id === 'show-details') {
+        showDetails(payload);
+      }
+    })
+    .render();
 }
 
-// Updates the global filterValues array, then re-runs the embedLiveboard to reload the original Liveboard with the updated values in the runtimeFilters
-const filterData = (embed, payload) => {
-  const actionData = LiveboardContextActionData.createFromJSON(payload);
-  const columnNameToFilter = actionData.columnNames[0];
-  const filterValues = [];
-  filterValues.push(actionData.data[columnNameToFilter][0]);
+// Show a pop-up with the product sales for the state selected.
+const showDetails = (payload) => {
+  const pinboardContextData = LiveboardContextActionData.createFromJSON(payload);
 
-  embed.trigger(HostEvent.UpdateRuntimeFilters, [{
-    columnName: columnNameToFilter,
-    operator: RuntimeFilterOp.EQ,
-    values: filterValues,
-  }]);
+  // Only gets the first column value.
+  const filter = pinboardContextData.data[pinboardContextData.columnNames[0]];
+
+  // Now show the details with the filter applied in a popup.
+  const popupEmbed = new LiveboardEmbed("#show-details", {
+    liveboardId: "e40c0727-01e6-49db-bb2f-5aa19661477b",
+    vizId: "96db6db8-662a-45b5-bc70-00341d75846b",
+    runtimeFilters: [{
+      columnName: 'state',
+      operator: RuntimeFilterOp.EQ,
+      values: [filter]
+    }],
+  });
+  popupEmbed.render();
+
+  // display the model box.
+  const detailsElement = document.getElementById('show-data');
+  detailsElement.style.display = 'block';
 }
+
 
 //----------------------------------- Functions to manage the UI. -----------------------------------
 
@@ -169,12 +176,6 @@ const clearEmbed = () => {
   div.innerHTML = "";
 }
 
-// closes the modal element when the close is selected.
-//const closeModal = () => {
-//  const showDataElement = document.getElementById('show-data')
-//  showDataElement.style.display = 'none';  // hide the box.
-//}
-
 //---------------------------- connect UI to code and start the app. ----------------------------
 
 // Show the URL to connect to.
@@ -182,7 +183,6 @@ document.getElementById('ts-url').innerText = 'ThoughtSpot Server: ' + tsURL;
 
 // Hook up the events to the buttons and links.
 document.getElementById('login-button').addEventListener('click', onLogin);
-//document.getElementById('close-modal').addEventListener('click', closeModal);
 
 // Events for nav bar
 document.getElementById('search-link').addEventListener('click', onSearch);
@@ -190,3 +190,12 @@ document.getElementById('liveboard-link').addEventListener('click', onLiveboard)
 document.getElementById('visualization-link').addEventListener('click', onVisualization);
 document.getElementById('full-application-link').addEventListener('click', onFull);
 document.getElementById('custom-action-link').addEventListener('click', onCustomAction);
+
+//---------------------------- Controls for the modal popup ----------------------------
+
+const closeModal = () => {
+  const showDataElement = document.getElementById('show-data')
+  showDataElement.style.display = 'none';  // hide the box.
+}
+
+document.getElementById('close-modal').addEventListener('click', closeModal);

@@ -14,10 +14,9 @@ import {
   Page,
   RuntimeFilterOp,
   SearchEmbed,
-} from './tsembed.es.js';
-// } from 'https://unpkg.com/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
+// } from './tsembed.es.js';
+} from 'https://unpkg.com/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
 
-import {getSearchData} from "./rest-api.js";
 import {LiveboardContextActionData} from "./dataclasses.js";
 
 // TODO - set the following for your URL.
@@ -27,10 +26,6 @@ const tsURL = "https://training.thoughtspot.cloud";
 
 // Create and manage the login screen.
 const onLogin = () => {
-  // The following can be used if you want to use AuthType.Basic
-  //const username = document.getElementById('username').value;
-  //const password = document.getElementById('password').value;
-
   // TODO add the init() to set up the SDK interface.
 
   hideDiv('login');
@@ -50,6 +45,7 @@ const onSearch = () => {
 
   // TODO replace the following with a SearchEmbed component and render.
   document.getElementById("embed").innerHTML = "<p class='warning'>Search not yet embedded.</p>";
+
 }
 
 const onLiveboard = () => {
@@ -57,6 +53,7 @@ const onLiveboard = () => {
 
   // TODO replace the following with a LiveboardEmbed component and render.
   document.getElementById("embed").innerHTML = "<p class='warning'>Liveboard not yet embedded.</p>";
+
 }
 
 const onVisualization = () => {
@@ -64,6 +61,7 @@ const onVisualization = () => {
 
   // TODO replace the following with a LiveboardEmbed component and render.
   document.getElementById("embed").innerHTML = "<p class='warning'>Visualization not yet embedded.</p>";
+
 }
 
 // Embed the full application.
@@ -74,26 +72,27 @@ const onFull = () => {
   document.getElementById("embed").innerHTML = "<p class='warning'>Full app not yet embedded.</p>";
 }
 
-// Embed a custom action.
+// Embed with a custom action.
 const onCustomAction = () => {
   showMainApp();
 
-  // TODO replace the following with an AppEmbed component for content linking and render.
+  // TODO replace the following with an AppEmbed component for showing a popup.
   document.getElementById("embed").innerHTML = "<p class='warning'>Custom action not yet embedded.</p>";
 }
 
-// Updates the global filterValues array, then re-runs the embedLiveboard to reload the original Liveboard with the updated values in the runtimeFilters
-const filterData = (embed, payload) => {
-  const actionData = LiveboardContextActionData.createFromJSON(payload);
-  const columnNameToFilter = actionData.columnNames[0];
-  const filterValues = [];
-  filterValues.push(actionData.data[columnNameToFilter][0]);
+// Show a pop-up with the product sales for the state selected.
+const showDetails = (payload) => {
+  const pinboardContextData = LiveboardContextActionData.createFromJSON(payload);
 
-  embed.trigger(HostEvent.UpdateRuntimeFilters, [{
-    columnName: columnNameToFilter,
-    operator: RuntimeFilterOp.EQ,
-    values: filterValues,
-  }]);
+  // Only gets the first column value.
+  const filter = pinboardContextData.data[pinboardContextData.columnNames[0]];
+
+  // Now show the details with the filter applied in a popup.
+  // TODO - add the code to show the popup with the runtime filter.
+
+  // display the model box.
+  const detailsElement = document.getElementById('show-data');
+  detailsElement.style.display = 'block';
 }
 
 //----------------------------------- Functions to manage the UI. -----------------------------------
@@ -129,3 +128,13 @@ document.getElementById('liveboard-link').addEventListener('click', onLiveboard)
 document.getElementById('visualization-link').addEventListener('click', onVisualization);
 document.getElementById('full-application-link').addEventListener('click', onFull);
 document.getElementById('custom-action-link').addEventListener('click', onCustomAction);
+
+//---------------------------- Controls for the modal popup ----------------------------
+
+const closeModal = () => {
+  const showDataElement = document.getElementById('show-data')
+  showDataElement.style.display = 'none';  // hide the box.
+}
+
+document.getElementById('close-modal').addEventListener('click', closeModal);
+
