@@ -1,6 +1,6 @@
 /*
  * Contains classes for handing API data.
- * This file supports and is tested against v2 (new experience) objects.  Last version tested was 9.1.0.cl.
+ * This file supports and is tested against v2 (new experience) objects.  Last version tested was 9.3.0.cl.
  * Other version may work, but have not been tested.
  */
 
@@ -10,6 +10,8 @@
  * @param arrays the arrays to combined and invert.
  */
 const zip = (arrays) => {
+  if (!arrays.length) return [];
+
   return arrays[0].map(function (_, i) {
     return arrays.map(function (array) {
       return array[i];
@@ -226,6 +228,20 @@ export class ActionData extends TabularData {
 }
 
 /*
+ * This function will return the name of a column given the column ID.
+ * The data looks like:
+ * [column: {id: <value>, name: <value>}, column: {id: <value>, name: <value>}]
+ */
+const get_column_name_for_id = (columns, id) => {
+  for (let i = 0; i < columns.length; i++) {
+    if (columns[i].column.id === id) {
+      return columns[i].column.name;
+    }
+  }
+  return null;
+};
+
+/*
  * This class handles data from Liveboard visualizations where the action was from the main menu or main action.
  * It does not work for Search/Answer visualizations or context menus.
  */
@@ -241,18 +257,22 @@ export class LiveboardActionData extends TabularData {
 
     try {
       const embedAnswerData = jsonData.data.embedAnswerData;
-      let columnNames = [];
+      const columnNames = [];
 
-      // Get the column meta information.
+      // Get the data and column names.
       const columns = embedAnswerData.columns;
-      const nbrCols = columns.length;
-      for (let colCnt = 0; colCnt < nbrCols; colCnt += 1) {
-        columnNames.push(columns[colCnt].column.name);
-      }
-
       const data = [];
-      for (let cnt = 0; cnt < columnNames.length; cnt++) {
-        data.push(embedAnswerData.data.columnDataLite[cnt].dataValue); // should be an array of columns values.
+
+      const columnDataLite =
+        typeof embedAnswerData.data === "array" || Array.isArray(embedAnswerData.data)
+          ? embedAnswerData.data[0].columnDataLite
+          : embedAnswerData.data.columnDataLite;
+
+      for (let cnt = 0; cnt < columnDataLite.length; cnt++) {
+        data.push(columnDataLite[cnt].dataValue); // should be an array of columns values.
+        const columnId = columnDataLite[cnt].columnId;
+        const columnName = get_column_name_for_id(columns, columnId);
+        columnNames.push(columnName ? columnName : columnId); // if the column name is null, use the column ID.
       }
 
       liveboardActionData.columnNames = columnNames;
@@ -390,7 +410,8 @@ export class LiveboardData {
   static createFromJSON(jsonData) {
     const liveboardData = new LiveboardData();
     try {
-      for (const viz of jsonData.contents) { // results have an array of visualizations.
+      for (const viz of jsonData.contents) {
+        // results have an array of visualizations.
         const vizData = new VizData(viz);
         vizData.columnNames = viz.column_names;
         vizData.populateDataByRow(viz.data_rows);
