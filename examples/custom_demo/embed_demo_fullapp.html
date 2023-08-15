@@ -180,8 +180,7 @@
 
 <!-- Put the ThoughtSpot EmbedSDK script down here so it runs after the page loads fully -->
 <script type='module'>
-  let tsHost = "https://{}.thoughtspot.cloud"; // No trailing slash
-
+    let tsHost = "https://{}.thoughtspot.cloud"; // No trailing slash
 // Import ThoughtSpot SDK
 import {
   init,
@@ -777,6 +776,14 @@ function parseLiveboardFiltersForFilters(filters){
             let fFilterDetails = filters[i].filters[0].filterContent[0]; 
             let fFilterOperator = fFilterDetails.filterType;
             let fFilterNegate =  fFilterDetails.negate;
+            // IN or EQ + negate: true represents Not Equals / != operator
+            // Defining an 'NE' value for 'operator' to represent this Not Equals condition further down the line 
+            if(fFilterNegate == true){
+                if (fFilterOperator == 'IN' || fFilterOperator == 'EQ'){
+                    fFilterOperator = 'NE';
+                }
+            }
+            
             let fFilterTimeBucket = filters[i].columnInfo.timeBucket;
             let filterValues = [];
             // fFilterDetails.value is array of objects, where the .key key gets you the actual values
@@ -885,12 +892,28 @@ function convertLiveboardFilterToTmlSearch(fieldName, dataType, operator, values
         else {
             let wrappedFilterValues = [];
             for(let k = 0, len = values.length; k<len; k++){
+                // Unclear how to use a term with a single quote currently with Search Data API, so skip them for now 
+                if (values[k].includes("'")){
+                    continue;
+                    // wrappedFilterValues.push('"' + values[k] + '"');
+                }
                 wrappedFilterValues.push("'" + values[k] + "'");
+                
             }
             // console.log(wrappedFilterValues);
             let valuesString = wrappedFilterValues.join(',');
             // filterString += "[" + fieldName + "] = " + valuesString + " ";
             filterString += `[${fieldName}] = ${valuesString} `;
+        }
+    }
+    
+    // 'NE' operator was created in the filter parser from IN/EQ and negate : true
+    if(operator == "NE"){
+        // The != syntax for multiple values appears to simply have each value in order like "[Store Type] != [Store Type].large [Store Type].Small"
+        filterString = `[${fieldName}] != [${fieldName}].'${values[0]}'`;
+        // Append any after the first value
+        for(let k = 1, len = values.length; k<len; k++){
+            filterString += ` [${fieldName}].'${values[k]}'`;
         }
     }
     
@@ -1062,6 +1085,22 @@ function buildCurrentVizOnLiveboardTML(liveboardId, vizId, lbFilters, runtimeFil
 
             // console.log('Attempting to remove any contradictory filters from underlying TML');
             // console.log("vizTmlSearchString at current time: ", vizTmlSearchString);
+
+            function reReplace(re, tmlString){
+                console.log('reReplace called with', re, tmlString);
+                let updatedTml;
+                for (let match of tmlString.matchAll(re)) {
+                    console.log("Match found for pattern: ", re);
+                    console.log(match);
+                    updatedTml = tmlString.replace(re, "");
+                    console.log("Updated TML after replacement: ", updatedTml);
+                    // Replace with the clause removed
+                 
+                    tmlString = updatedTml;
+                }
+                return tmlString;
+            }
+
             for(let i=0, len = finalFilters.length; i<len; i++){
                 let filterFieldName = finalFilters[i].fieldName;
                 let filterFieldType = finalFilters[i].dataType;
@@ -1072,42 +1111,64 @@ function buildCurrentVizOnLiveboardTML(liveboardId, vizId, lbFilters, runtimeFil
                 /* There are 4 TML filter clause types that we are searching and nulling out. Possibly more might be discovered and added */
 
                 // 'between' clause
-                let betweenRE = filterFieldNameRegex + " between.*and " + filterFieldNameRegex + "\\S*\\s"; 
+                let betweenRE = filterFieldNameRegex + " between.*and " + filterFieldNameRegex + "\\S*(\\s|$)"; 
                 const reBetween = new RegExp(betweenRE, "g");
-                for (let match of vizTmlSearchString.matchAll(reBetween)) {
-                    console.log("Match found for reBetween pattern: ", reBetween);
-                    console.log(match);
-                    updatedTml = vizTmlSearchString.replace(reBetween, "");
-                    console.log("Updated TML after replacement: ", updatedTml);
-                    // Replace with the clause removed
-                    vizTmlSearchString = updatedTml;
-                }
+                vizTmlSearchString = reReplace(reBetween, vizTmlSearchString);
+
+                // >= for time is 'on or after' , < is 'before'
+                let onOrAfterBeforeRE = filterFieldNameRegex + " (on or after|before) \\S*(\\s|$)"; 
+                const reOnOrAfterBefore = new RegExp(onOrAfterBeforeRE, "g");
+                vizTmlSearchString = reReplace(reOnOrAfterBefore, vizTmlSearchString);
+
                 
-                // 'Comparison Operator' clauses
-                let operatorsRE = "\\S*.\\s(=|>=|>|<|!=|>=|<=)\\s\\S*";
+                // Numeric 'Comparison Operator' clauses (or do you need extra rule for TIME)                
+                let operatorsRE = filterFieldNameRegex + "\\s(>=|>|<|>=|<=)\\s\\S*";
                 const reOperators = new RegExp(operatorsRE, "g");
-                for (let match of vizTmlSearchString.matchAll(reOperators)) {
-                    console.log("Match found for reOperators pattern: ", reOperators);
+                vizTmlSearchString = reReplace(reOperators, vizTmlSearchString);                
+               
+                // 'Not Equal Operator' clause for list (first half) (these look like [Field] != [Field].value1 [Field].value2 )
+                let neRE = filterFieldNameRegex + "\\s(=|!=)\\s\\[";
+                const reNE = new RegExp(neRE, "g");
+                let neREMatchCount = 0;
+
+                let notEqualRe = filterFieldNameRegex + " (=|!=)\\s\\S*";
+                const reNotEqual = new RegExp(notEqualRe, "g");
+                for (let match of vizTmlSearchString.matchAll(reNE)) {
+                    console.log("Match found for reNE pattern: ", reNE);
                     console.log(match);
-                    updatedTml = vizTmlSearchString.replace(reOperators, "");
+                    // The Regex grabs all the way through the [ of the following caluse, so we replace it. If I were better at RegEx I'm sure another way
+                    updatedTml = vizTmlSearchString.replace(reNE, "[");
                     console.log("Updated TML after replacement: ", updatedTml);
                     // Replace with the clause removed
                     vizTmlSearchString = updatedTml;
+                    neREMatchCount++;
+                
+                }
+
+                 // 'Not Equal Operator' clause if by itself (these look like [Field] != value)
+                if (neREMatchCount == 0){
+                    for (let match of vizTmlSearchString.matchAll(reNotEqual)) {
+                        console.log("Match found for reNotEql pattern: ", reNotEqual);
+                        console.log(match);
+                        
+                        updatedTml = vizTmlSearchString.replace(reNotEqual, "");
+                        console.log("Updated TML after replacement: ", updatedTml);
+                        // Replace with the clause removed
+                        vizTmlSearchString = updatedTml;
+                        
+                    }
                 }
 
                 // 'Dot operator' clauses for dimension assignment (more typical than '='). two variations - wrapped in single quotes and without
+                let dotDoubleQuoteRE = filterFieldNameRegex + "\\.\".*\\b\"";
                 let dotSingleQuoteRE = filterFieldNameRegex + "\\.'.*\\b'";
                 let dotNoQuoteRE = filterFieldNameRegex + "\\.\\S*";
 
+                const reDotDoubleQuote = new RegExp(dotDoubleQuoteRE, "g");
+                vizTmlSearchString = reReplace(reDotDoubleQuote, vizTmlSearchString);
+
                 const reDotSingleQuote = new RegExp(dotSingleQuoteRE, "g");
-                for (let match of vizTmlSearchString.matchAll(reDotSingleQuote)) {
-                    console.log("Match found for reDotSingleQuote pattern: ", reDotSingleQuote);
-                    console.log(match);
-                    updatedTml = vizTmlSearchString.replace(reDotSingleQuote, "");
-                    console.log("Updated TML after replacement: ", updatedTml);
-                    // Replace with the clause removed
-                    vizTmlSearchString = updatedTml;
-                }
+                vizTmlSearchString = reReplace(reDotSingleQuote, vizTmlSearchString);
 
                 const reDotNoQuote = new RegExp(dotNoQuoteRE, "g");
                 for (let match of vizTmlSearchString.matchAll(reDotNoQuote)) {
