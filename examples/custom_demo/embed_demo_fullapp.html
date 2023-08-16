@@ -893,9 +893,11 @@ function convertLiveboardFilterToTmlSearch(fieldName, dataType, operator, values
             let wrappedFilterValues = [];
             for(let k = 0, len = values.length; k<len; k++){
                 // Unclear how to use a term with a single quote currently with Search Data API, so skip them for now 
-                if (values[k].includes("'")){
-                    continue;
-                    // wrappedFilterValues.push('"' + values[k] + '"');
+                if (values[k] !== null){
+                    if (values[k].includes("'")){
+                        continue;
+                        // wrappedFilterValues.push('"' + values[k] + '"');
+                    }
                 }
                 wrappedFilterValues.push("'" + values[k] + "'");
                 
@@ -1131,8 +1133,15 @@ function buildCurrentVizOnLiveboardTML(liveboardId, vizId, lbFilters, runtimeFil
                 const reNE = new RegExp(neRE, "g");
                 let neREMatchCount = 0;
 
+                // String files are are wrapped in single quotes if they have spaces, needs this pattern
+                let notEqualSingleQuoteRe = filterFieldNameRegex + " (=|!=)\\s'.*?'\\s";
+                const reNotEqualSQ = new RegExp(notEqualSingleQuoteRe, "g");
+                vizTmlSearchString = reReplace(reNotEqualSQ, vizTmlSearchString);    
+
+                // Pattern for when not wrapped in single quotes (numeric fields used as categorical filters, or strings with no spaces)
                 let notEqualRe = filterFieldNameRegex + " (=|!=)\\s\\S*";
                 const reNotEqual = new RegExp(notEqualRe, "g");
+
                 for (let match of vizTmlSearchString.matchAll(reNE)) {
                     console.log("Match found for reNE pattern: ", reNE);
                     console.log(match);
