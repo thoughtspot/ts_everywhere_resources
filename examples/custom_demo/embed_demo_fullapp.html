@@ -613,9 +613,9 @@ embed
 
             // Viz column metadata (array of column objects)
             // Data response only gives you the column ID, if you want the field name you can find Id and Name here
-            let vColumns = actionData.columns;
+            // let vColumns = actionData.columns;
             // Viz data (actual current state of visible points). Array of objects
-            let vColumnData = actionData.data[0].columnDataLite;
+            // let vColumnData = actionData.data[0].columnDataLite;
             // Each columnDataLite object has a .dataValue property, which is the Array of the actual values
             // Data is returned Columnar, but each column has same length (they represent rows but aren't returned as such, for visualization purposes)
             // You can recreate the Rows of data by iterating through one column and adding in the values from other columns at same index 
@@ -892,14 +892,16 @@ function convertLiveboardFilterToTmlSearch(fieldName, dataType, operator, values
         else {
             let wrappedFilterValues = [];
             for(let k = 0, len = values.length; k<len; k++){
-                // Unclear how to use a term with a single quote currently with Search Data API, so skip them for now 
-                if (values[k] !== null){
-                    if (values[k].includes("'")){
-                        continue;
-                        // wrappedFilterValues.push('"' + values[k] + '"');
-                    }
+                if (values[k] == null){
+                    wrappedFilterValues.push('{null}');
                 }
-                wrappedFilterValues.push("'" + values[k] + "'");
+                // If there is a single quote, you can use double quotes around but they must be escaped with \
+                else if (values[k].includes("'")){
+                        wrappedFilterValues.push('\\"' + values[k] + '\\"');
+                }
+                else {
+                    wrappedFilterValues.push("'" + values[k] + "'");
+                }
                 
             }
             // console.log(wrappedFilterValues);
@@ -912,10 +914,20 @@ function convertLiveboardFilterToTmlSearch(fieldName, dataType, operator, values
     // 'NE' operator was created in the filter parser from IN/EQ and negate : true
     if(operator == "NE"){
         // The != syntax for multiple values appears to simply have each value in order like "[Store Type] != [Store Type].large [Store Type].Small"
-        filterString = `[${fieldName}] != [${fieldName}].'${values[0]}'`;
+        if (values[0] == null){
+            filterString = `[${fieldName}] != [${fieldName}].{null}`;
+        }
+        else {
+            filterString = `[${fieldName}] != [${fieldName}].'${values[0]}'`;
+        }
         // Append any after the first value
         for(let k = 1, len = values.length; k<len; k++){
-            filterString += ` [${fieldName}].'${values[k]}'`;
+            if (values[k] == null){
+                filterString += ` [${fieldName}].{null}`;
+            }
+            else{
+                filterString += ` [${fieldName}].'${values[k]}'`;
+            }
         }
     }
     
