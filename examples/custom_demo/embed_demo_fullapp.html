@@ -897,7 +897,7 @@ function convertLiveboardFilterToTmlSearch(fieldName, dataType, operator, values
                 }
                 // If there is a single quote, you can use double quotes around but they must be escaped with \
                 else if (values[k].includes("'")){
-                        wrappedFilterValues.push('\\"' + values[k] + '\\"');
+                        wrappedFilterValues.push('\"' + values[k] + '\"');
                 }
                 else {
                     wrappedFilterValues.push("'" + values[k] + "'");
