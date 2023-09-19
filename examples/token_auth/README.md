@@ -1,4 +1,4 @@
-# Get Token Service
+# Token Request Service demo in Flask (Python)
 
 This project is a simple Flask service that will act as a trusted authentication service for ThoughtSpot.  
 
