@@ -1,0 +1,1 @@
+This example is a single HTML page with configurable JavaScript variables for testing out the 'user_parameters' section of the auth token in ThoughtSpot 9.10.5 and later that used for assigning filters and parameters for ABAC
