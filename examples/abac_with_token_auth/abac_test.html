@@ -11,13 +11,16 @@
         // This is just for testing purposes, do not deploy publicly in any form with hardcoded credentials
         let thoughtspotUrl = "https://{}.thoughtspot.cloud";
         let tokenUsername = "";
+        // Choose one of password or secret_key from Develop->Security Settings. If username/password combo, must be admin user for user_parameters to work
         let tokenPassword = "";
+        let secretKey = "";
+
         let orgId = 0; 
         let defaultLiveboardGuid = 'bd486d13-aac8-412c-b011-2b09245a8b16';
         let token_validity_secs = 3000;
 
     </script>
-    <title>ThoughtSpot ABAC Test</title>
+    <title>ThoughtSpot Token/ABAC Test</title>
 
     <link rel="preconnect" href="https://fonts.gstatic.com"> 
     <link href="https://fonts.googleapis.com/css2?family=Material+Icons&family=Monoton&family=Bungee+Outline&family=Roboto:wght@400;500;700&family=Faster+One&family=Plaster&display=swap" rel="stylesheet">
@@ -26,13 +29,16 @@
         body {
             background-color: rgb(255, 255, 255);
             font-family: sans-serif;
+            margin: 0px;
+            padding: 0px;
+            font-size: .9em;
         }
 
         div {
             /* border: 1px dashed black; */
             /* margin: 4px; */
-            padding: 5px 8px 5px 8px;
-            margin: 0px;
+            /* padding: 5px 8px 5px 8px; */
+            margin: 2px;
         }
 
         #embed {
@@ -49,7 +55,8 @@
             background-color: black;
             color: white;
             padding-bottom: 2px;
-            padding-top: 3px;
+            padding-top: 1px;
+            margin: 0px;
         }
 
         #sidebar {
@@ -86,6 +93,17 @@
         }
         li:hover{
             background-color: rgb(238, 238, 238);
+        }
+
+        .menu-button {
+            display: inline; 
+            border-radius: 6px; 
+            padding: 7px 5px 7px 5px; 
+            border: 1px solid black; 
+        }
+        .menu-button:hover{
+            border: 1px solid blue;
+            color: blue;
         }
     </style>
     <style>
@@ -136,8 +154,7 @@
 <body>
     <!-- Top header bar.  Feel free to add logo or other elements -->
     <div id='header'>
-        <h2>ThoughtSpot ABAC Test</h1>
-        <p>Set credentials and defaults in the variables at the top of the HTML file
+        <h3>ThoughtSpot Token/ABAC Tester</h3>
     </div>
     <!-- Main page is flex container split into 'sidebar' menu and 'main-content-div' where ThoughtSpot content embeds -->
     <div id='page-content-div' style='display: flex;'>
@@ -146,22 +163,40 @@
                 <input id="url-input" style="width:250px;"></input>
             <p>Org ID:
                 <input id="org-id-input"></input>  
-            <p>Liveboard GUID:
-                <input id="liveboard-input" style="width:250px;"></input>
+
+            <p>Content Type:
+                <select id="content-type-select">
+                    <option value="liveboard">Liveboard</option>
+                    <option value="answer">Answer</option>
+                    <option value="search">Search</option>
+                   <!-- <option value="sage">Natural Language Search</option>-->
+                </select>
+            <p>Content GUID:
+                <input id="guid-input" style="width:250px;"></input>
             <p>Username:
                 <input id="username-input" style="width:250px;"></input>
             <p style="text-align: right;">
-                <button id='token-button' class='menu-button' style="display: inline; border-radius: 6px; padding: 7px 5px 7px 5px; border: 1px solid black; ">Generate token</button></p>
-            <p>Token:
-                <input id="token-input" style="width:250px;"></input>  
+                <button id='clear-token-button' class='menu-button'  onclick="clearToken();">Clear token</button>
+                <button id='token-button' class='menu-button'>Generate token</button></p>
+            <p>Token (generate or paste in):
+                <input id="token-input" style="width:400px;"></input>  
+            <p>Type of Trusted Auth:
+                <select id="trusted-select">
+                    <option value="cookieless">Cookieless</option>
+                    <option value="cookie-based">Cookie-based</option>
+                </select>
             <p style="text-align: right;">
-                <button id='test-button' class='menu-button' style="display: inline; border-radius: 6px; padding: 7px 5px 7px 5px; border: none; border: 1px solid black; ">Load Liveboard</button> <!-- Change to display: none; to hide -->
+                <button id="logout-button" class="menu-button">Clear Existing TS Session</button>
+                <button id='load-button' class='menu-button'>Load Content</button> 
             </p>
 
-
-            <!-- Analytics menu gets populated based on the menuItems object above-->
             <hr/>
             <h3>ABAC Configuration</h3>
+            <p>Include user_properties in request?:
+                <select id="abac-select">
+                    <option value="true">Yes</option>
+                    <option value="false">No</option>
+                </select>
             <p>Persist token values?:
                 <select id="persist-select">
                     <option value="false">Not Persist</option>
@@ -201,9 +236,15 @@
     * Set defaults in the inputs
     */
     document.getElementById('url-input').value = thoughtspotUrl;
-    document.getElementById('liveboard-input').value = defaultLiveboardGuid;
+    document.getElementById('guid-input').value = defaultLiveboardGuid;
     document.getElementById('username-input').value = tokenUsername;
     document.getElementById('org-id-input').value = orgId;
+
+    function clearToken(){
+        //alert("Clearing the token");
+        let tokenInput = document.getElementById('token-input');
+        tokenInput.value = "";
+    }
 </script>
 
 <!-- from https://www.w3schools.com/howto/howto_css_modals.asp -->
@@ -263,7 +304,6 @@
     // Import ThoughtSpot SDK
     import {
         init,
-        PinboardEmbed,
         LiveboardEmbed,
         SearchEmbed,
         Action,
@@ -283,11 +323,23 @@
     
     function initThoughtspot(){
         // Initialize embed configuration
+
+        // Pick up Cookieless vs. Cookie-based from the select box
+        let trustedTypeSelect = document.getElementById('trusted-select');
+        let ttSelectVal = trustedTypeSelect.options[trustedTypeSelect.selectedIndex].value;
+        let trustedType = AuthType.TrustedAuthTokenCookieless;
+        if (ttSelectVal == 'cookieless'){
+            trustedType = AuthType.TrustedAuthTokenCookieless;
+        }
+        else if (ttSelectVal == 'cookie-based'){
+            trustedType = AuthType.TrustedAuthToken;
+        }
+
         init(
         {
             thoughtSpotHost: document.getElementById('url-input').value,
             //authType: AuthType.TrustedAuthToken,
-            authType: AuthType.TrustedAuthTokenCookieless,
+            authType: trustedType,
             username: document.getElementById('username-input').value,
             getAuthToken: authTokenCallback 
         });
@@ -350,7 +402,7 @@
     
     function makeVisualization(guid, vizGuid){
         // Instantiate class for embedding a pinboard
-        let embed = new PinboardEmbed(embedDiv, {
+        let embed = new LiveboardEmbed(embedDiv, {
             frameParams: {},
             /*param-start-modifyActions*/
             disabledActions: [],
@@ -531,37 +583,35 @@
     }
 
    /* Router function to read the content type and map to appropriate build function */
-   function loadContent(contentObj){
-        console.log('Running load content');
-        console.log(contentObj);
-        clearEmbed();
-        if(contentObj.description !== null){
-            writeDescription(contentObj.description);
+   function loadContent(){
+        let contentTypeSelect = document.getElementById('content-type-select');
+        let contentType = contentTypeSelect.options[contentTypeSelect.selectedIndex].value;
+        let guid = document.getElementById('guid-input').value;
+        initThoughtspot();
+
+        if(contentType == 'liveboard'){
+            makeLiveboard(guid);
         }
-        else {
-            document.getElementById("description").style.display = "none";
+        /*if(contentObj.type == 'visualization'){
+            makeVisualization(guid, vizGuid);
+        }*/
+        if(contentType == 'search'){
+            makeSearch(guid);
         }
-        if(contentObj.type == 'liveboard'){
-            makeLiveboard(contentObj.guid);
-        }
-        if(contentObj.type == 'visualization'){
-            makeVisualization(contentObj.guid, contentObj.vizGuid);
-        }
-        if(contentObj.type == 'search'){
-            makeSearch(contentObj.guid);
-        }
-        if(contentObj.type == 'answer'){
-            makeAnswer(contentObj.guid);
+        if(contentType == 'answer'){
+            makeAnswer(guid);
         }
    }
 
 
-   document.getElementById('test-button').onclick = function (){
+   document.getElementById('load-button').onclick = loadContent;
+   
+   function simpleLoadLiveboard(){
         // Need to do logout to clear token between inits
         //logout();
         //clearEmbed();
         initThoughtspot();
-        makeLiveboard(document.getElementById('liveboard-input').value)
+        makeLiveboard(document.getElementById('guid-input').value)
    };
 
 // rest API call from documentation
@@ -571,18 +621,23 @@ async function restApiCallV2(endpoint, httpVerb, apiRequestObject){
     console.log("hitting endpoint " + endpoint + " with verb " + httpVerb + " and request:");
     console.log(apiRequestObject);
     const apiFullEndpoint = tsHost + "/" + publicApiUrl + endpoint;
-    return await fetch(
-        apiFullEndpoint,
-        {
+    let reqOptions =  {
             method: httpVerb.toUpperCase(),
             headers: {
                 "Accept": "application/json",
                 "X-Requested-By": "ThoughtSpot",
                 "Content-Type": "application/json"
             },
-            credentials: "include",
-            body: JSON.stringify(apiRequestObject)
-        })
+            credentials: "include"
+    };
+    if (apiRequestObject != null){
+        reqOptions['body'] = JSON.stringify(apiRequestObject);
+    }
+
+    return await fetch(
+        apiFullEndpoint,
+        reqOptions
+       )
     // is there always response JSON?
     .then(response =>  response.json())
     .catch(error => {
@@ -592,80 +647,104 @@ async function restApiCallV2(endpoint, httpVerb, apiRequestObject){
 
 
 // Create the tokenRequest then send it
-document.getElementById('token-button').onclick = function (){
-        // Need to do logout to clear token between inits
-        //logout();
-        //clearEmbed();
-        orgId = document.getElementById('org-id-input').value;
-        let e = document.getElementById('persist-select');
-        let persistAll = false; 
-        if(e.options[e.selectedIndex].value == "true"){
-            persistAll = true;
-        }
-
-        let parametersString = document.getElementById('parameters-input').value;
-        let filtersString = document.getElementById('filters-input').value;
-        let pObj = JSON.parse(parametersString);
-        let fObj = JSON.parse(filtersString);
-        
-
-        console.log(pObj);
-        console.log(fObj);
-
-        console.log(Object.keys(pObj).length);
-
-        let tokenReq = { 
-            "username": tokenUsername,
-            "password": tokenPassword,
-            "org_id": orgId,
-            "validity_time_in_sec": token_validity_secs,
-            "user_parameters": null
-        };
-
-        // Generate the full syntax from the simplified input
-        let userParameters = { 
-            "parameters": [], "runtime_filters": []
-        }
-        console.log(userParameters);
-
-    if (Object.keys(pObj).length > 0){
-        console.log(userParameters);
-        userParameters['parameters'] = [];
-        for (const param in pObj) {
-            let cur_param = {"name": param, "values": pObj[param], "persist": persistAll};
-            userParameters['parameters'].push(cur_param);
-
-        //user_parameters['parameters'].push(runtime_param_section)
-        } 
+ function requestToken (){
+    // Need to do logout to clear token between inits
+    //logout();
+    //clearEmbed();
+    let tokenInput = document.getElementById('token-input');
+    if (tokenInput.value != ""){
+        alert("Please clear the existing token before requesting another token");
+        return false;
     }
-    if (Object.keys(fObj).length > 0){
-        userParameters['runtime_filters'] = [];
-        let op;
-        for (const fil in fObj){
-            if (fObj[fil].length == 1){
-                op = 'EQ'
-            }
-            else{
-                op = 'IN'
-            }
-            let cur_filter = {"column_name": fil, "operator": op, "values": fObj[fil], "persist": persistAll};
-            userParameters['runtime_filters'].push(cur_filter)
-        }
-            
-            
+
+    orgId = document.getElementById('org-id-input').value;
+    let e = document.getElementById('persist-select');
+    let persistAll = false; 
+    if(e.options[e.selectedIndex].value == "true"){
+        persistAll = true;
     }
-    tokenReq['user_parameters'] = userParameters;
+
+    let parametersString = document.getElementById('parameters-input').value;
+    let filtersString = document.getElementById('filters-input').value;
+
+    let pObj;
+    let fObj;
+    if (parametersString != ""){
+        pObj = JSON.parse(parametersString);
+    }
+    if (filtersString != ""){
+        fObj = JSON.parse(filtersString);
+    }
+    
+
+    console.log(pObj);
+    console.log(fObj);
+
+    console.log(Object.keys(pObj).length);
+
+    let tokenReq = { 
+        "username": tokenUsername,
+        "org_id": orgId,
+        "validity_time_in_sec": token_validity_secs,
+    };
+    if (secretKey != ""){
+        tokenReq["secret_key"] = secretKey;
+    }
+    else {
+        tokenReq["password"] = tokenPassword;
+    }
+
+    // Generate the full syntax from the simplified input
+    let userParamSelect = document.getElementById('abac-select');
+    let userParamSectionFlag =  userParamSelect.options[userParamSelect.selectedIndex].value;
+    if( userParamSectionFlag == 'true'){
+        let userParameters = {};
+
+    
+        if (pObj !== null){
+            if (Object.keys(pObj).length > 0){
+                console.log(userParameters);
+                userParameters['parameters'] = [];
+                for (const param in pObj) {
+                    let cur_param = {"name": param, "values": pObj[param], "persist": persistAll};
+                    userParameters['parameters'].push(cur_param);
+
+                //user_parameters['parameters'].push(runtime_param_section)
+                } 
+            }
+        }
+        if (fObj !== null){
+            if (Object.keys(fObj).length > 0){
+                userParameters['runtime_filters'] = [];
+                let op;
+                for (const fil in fObj){
+                    if (fObj[fil].length == 1){
+                        op = 'EQ'
+                    }
+                    else{
+                        op = 'IN'
+                    }
+                    let cur_filter = {"column_name": fil, "operator": op, "values": fObj[fil], "persist": persistAll};
+                    userParameters['runtime_filters'].push(cur_filter)
+                }     
+            }
+        }
+    
+        tokenReq['user_parameters'] = userParameters;
+    }
+
     console.log(tokenReq);
-    // return;
 
-        let tokenResult = callFullAuthTokenApi(tokenReq).then( result => {
-            console.log(result);
-            if ("token" in result) {
-                document.getElementById('token-input').value = result['token'];            
-            }
-        });
 
-   };
+    let tokenResult = callFullAuthTokenApi(tokenReq).then( result => {
+        console.log(result);
+        if ("token" in result) {
+            document.getElementById('token-input').value = result['token'];            
+        }
+    });
+}
+
+document.getElementById('token-button').onclick = requestToken;
 
 async function callFullAuthTokenApi(tokenRequestObj){
     console.log("Using following Request for Full Access Token API: ", tokenRequestObj);
@@ -673,6 +752,15 @@ async function callFullAuthTokenApi(tokenRequestObj){
 
     return restApiCallV2(fullAccessTokenEndpoint, 'POST', tokenRequestObj);
 }
+
+async function callAuthSessionLogoutApi(){
+    console.log("Signing out of any ThoughtSpot session via REST API");
+    let authSessionLogoutEndpoint  = 'auth/session/logout';
+
+    return restApiCallV2(authSessionLogoutEndpoint, 'POST');
+}
+
+document.getElementById('logout-button').onclick = callAuthSessionLogoutApi;
 
 </script>
  
