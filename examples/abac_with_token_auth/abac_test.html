@@ -154,7 +154,7 @@
 <body>
     <!-- Top header bar.  Feel free to add logo or other elements -->
     <div id='header'>
-        <h3>ThoughtSpot Token/ABAC Tester</h3>
+        <h3>ThoughtSpot Token/ABAC Tester - edit the variables in the .html file itself to save credentials and default values</h3>
     </div>
     <!-- Main page is flex container split into 'sidebar' menu and 'main-content-div' where ThoughtSpot content embeds -->
     <div id='page-content-div' style='display: flex;'>
@@ -178,7 +178,7 @@
             <p style="text-align: right;">
                 <button id='clear-token-button' class='menu-button'  onclick="clearToken();">Clear token</button>
                 <button id='token-button' class='menu-button'>Generate token</button></p>
-            <p>Token (generate or paste in):
+            <p>Token (paste in or press generate token above):
                 <input id="token-input" style="width:400px;"></input>  
             <p>Type of Trusted Auth:
                 <select id="trusted-select">
@@ -191,7 +191,7 @@
             </p>
 
             <hr/>
-            <h3>ABAC Configuration</h3>
+            <h3>user_properties Configuration (ABAC)</h3>
             <p>Include user_properties in request?:
                 <select id="abac-select">
                     <option value="true">Yes</option>
@@ -201,6 +201,11 @@
                 <select id="persist-select">
                     <option value="false">Not Persist</option>
                     <option value="true">Persist</option>
+                </select>
+                &nbsp; &nbsp; Compress?
+                <select id="compress-select">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
                 </select>
             <p>Parameters:</p>
             <textarea id="parameters-input" rows="4" cols="50">
@@ -700,6 +705,14 @@ async function restApiCallV2(endpoint, httpVerb, apiRequestObject){
     if( userParamSectionFlag == 'true'){
         let userParameters = {};
 
+        let compressSelect = document.getElementById('compress-select');
+        let compressFlag =  compressSelect.options[compressSelect.selectedIndex].value;
+        if (compressFlag == 'true'){
+            userParameters["compress"] = true;
+        }
+        else {
+            userParameters["compress"] = false;
+        }
     
         if (pObj !== null){
             if (Object.keys(pObj).length > 0){
