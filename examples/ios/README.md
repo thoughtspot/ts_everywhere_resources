@@ -16,4 +16,4 @@ When you press "Show Liveboards", the app transitions to `Liveboard Table View C
 
 Clicking on any of the Liveboard items in the list transitions to `Liveboard Component View Controller`, which has a WebView that currently points to https://github.com/thoughtspot/tse-auth-token-server-example/blob/main/static/ios_liveboard.html
 
-The code sends the Token, the THoughtSpot instance URL and the Liveboard GUID to this page, filling in the variables for it to load properly
+The code sends the Token, the ThoughtSpot instance URL and the Liveboard GUID to this page, filling in the variables for it to load properly
