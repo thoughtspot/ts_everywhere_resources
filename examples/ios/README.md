@@ -10,8 +10,6 @@ First View Controller scene allows you to set your ThoughtSpot instance URL, and
 
 Use `api/rest/2.0/auth/token/full` to create a token with a long `validity_time_in_sec` property (many days or weeks), then paste it into the token entry box. 
 
-The token is saved when it gets pasted, but it's unclear if the save works correctly until the next time you open the app at the moment. Reopen the app.
-
 At this point, the Liveboards for the user will be requeste via `/metadata/search`.
 
 When you press "Show Liveboards", the app transitions to `Liveboard Table View Controller` which generates a table view with the available liveboards for the user.
