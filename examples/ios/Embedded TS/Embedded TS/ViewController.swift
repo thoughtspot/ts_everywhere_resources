@@ -48,6 +48,7 @@ class UrlInputDelegate: UIResponder, UITextFieldDelegate {
         print(textField.text!)
         TSUrl = textField.text!
         UsrDefaults.set(TSUrl, forKey: "TSUrl")
+        TSRestApi.accessToken = TSAccessToken!
         textField.resignFirstResponder()
         return true
     }
