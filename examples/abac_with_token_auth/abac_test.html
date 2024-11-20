@@ -19,6 +19,8 @@
         let defaultLiveboardGuid = 'bd486d13-aac8-412c-b011-2b09245a8b16';
         let token_validity_secs = 3000;
 
+        let tokenType = "custom"; // other option is "full", before 10.4
+
     </script>
     <title>ThoughtSpot Token/ABAC Test</title>
 
@@ -199,8 +201,10 @@
                 </select>
             <p>Persist token values?:
                 <select id="persist-select">
-                    <option value="false">Not Persist</option>
-                    <option value="true">Persist</option>
+                    <option value="NONE">NONE</option>
+                    <option value="REPLACE">REPLACE</option>
+                    <option value="APPEND">APPEND</option>
+                    <option value="RESET">RESET</option>
                 </select>
                 &nbsp; &nbsp; Compress?
                 <select id="compress-select">
@@ -665,7 +669,7 @@ async function restApiCallV2(endpoint, httpVerb, apiRequestObject){
     orgId = document.getElementById('org-id-input').value;
     let e = document.getElementById('persist-select');
     let persistAll = false; 
-    if(e.options[e.selectedIndex].value == "true"){
+    if(e.options[e.selectedIndex].value != "NONE"){
         persistAll = true;
     }
 
@@ -757,13 +761,159 @@ async function restApiCallV2(endpoint, httpVerb, apiRequestObject){
     });
 }
 
-document.getElementById('token-button').onclick = requestToken;
+// Custom token is available in 10.4 while full is set for deprecation
+function requestCustomToken (){
+    // Need to do logout to clear token between inits
+    //logout();
+    //clearEmbed();
+    let tokenInput = document.getElementById('token-input');
+    if (tokenInput.value != ""){
+        alert("Please clear the existing token before requesting another token");
+        return false;
+    }
 
+    orgId = document.getElementById('org-id-input').value;
+
+    let e = document.getElementById('persist-select');
+    let persistOption = "NONE"; 
+    persistOption = e.options[e.selectedIndex].value;
+
+
+    let parametersString = document.getElementById('parameters-input').value;
+    let filtersString = document.getElementById('filters-input').value;
+
+    let pObj;
+    let fObj;
+    if (parametersString != ""){
+        pObj = JSON.parse(parametersString);
+    }
+    if (filtersString != ""){
+        fObj = JSON.parse(filtersString);
+    }
+    
+
+    console.log(pObj);
+    console.log(fObj);
+
+    console.log(Object.keys(pObj).length);
+
+    // Just for 10.4, where REPLACE is not implemented
+    // Send a RESET first, then an APPEND
+    if (persistOption == 'REPLACE'){
+        let resetTokenReq = { 
+            "username": tokenUsername,
+            "org_identifier": orgId,
+            "validity_time_in_sec": token_validity_secs,
+            "auto_create": false,
+            "persist_option": 'RESET'
+        };
+        if (secretKey != ""){
+            resetTokenReq["secret_key"] = secretKey;
+        }
+        else {
+            resetTokenReq["password"] = tokenPassword;
+        }
+
+        let resetTokenResult = callCustomAuthTokenApi(resetTokenReq).then( result => {
+            console.log("Sent a RESET token request to clear any existing values");
+            console.log(result);
+        });
+
+        // send APPEND after
+        persistOption = 'APPEND';
+    }
+
+    let tokenReq = { 
+        "username": tokenUsername,
+        "org_identifier": orgId,
+        "validity_time_in_sec": token_validity_secs,
+        "auto_create": false,
+        "persist_option": persistOption
+    };
+    if (secretKey != ""){
+        tokenReq["secret_key"] = secretKey;
+    }
+    else {
+        tokenReq["password"] = tokenPassword;
+    }
+
+    // Generate the full syntax from the simplified input
+    let userParamSelect = document.getElementById('abac-select');
+    let userParamSectionFlag =  userParamSelect.options[userParamSelect.selectedIndex].value;
+    if( userParamSectionFlag == 'true'){
+        let userParameters = {};
+
+        /*
+        let compressSelect = document.getElementById('compress-select');
+        let compressFlag =  compressSelect.options[compressSelect.selectedIndex].value;
+        if (compressFlag == 'true'){
+            userParameters["compress"] = true;
+        }
+        else {
+            userParameters["compress"] = false;
+        }*/
+    
+        if (pObj !== null){
+            if (Object.keys(pObj).length > 0){
+                console.log(userParameters);
+                tokenReq['parameter_values'] = [];
+                for (const param in pObj) {
+                    let cur_param = {"name": param, "values": pObj[param] };
+                    tokenReq['parameter_values'].push(cur_param);
+
+                //user_parameters['parameters'].push(runtime_param_section)
+                } 
+            }
+        }
+        if (fObj !== null){
+            if (Object.keys(fObj).length > 0){
+                tokenReq['filter_rules'] = [];
+                let op;
+                for (const fil in fObj){
+                    if (fObj[fil].length == 1){
+                        op = 'EQ'
+                    }
+                    else{
+                        op = 'IN'
+                    }
+                    let cur_filter = {"column_name": fil, "operator": op, "values": fObj[fil]};
+                    tokenReq['filter_rules'].push(cur_filter)
+                }     
+            }
+        }
+    
+        //tokenReq['user_parameters'] = userParameters;
+    }
+
+    console.log(tokenReq);
+
+
+    let tokenResult = callCustomAuthTokenApi(tokenReq).then( result => {
+        console.log(result);
+        if ("token" in result) {
+            document.getElementById('token-input').value = result['token'];            
+        }
+    });
+}
+
+if (tokenType == "full"){
+    document.getElementById('token-button').onclick = requestToken;
+}
+else if (tokenType == "custom"){
+    document.getElementById('token-button').onclick = requestCustomToken;
+}
 async function callFullAuthTokenApi(tokenRequestObj){
     console.log("Using following Request for Full Access Token API: ", tokenRequestObj);
     let fullAccessTokenEndpoint = 'auth/token/full';
 
     return restApiCallV2(fullAccessTokenEndpoint, 'POST', tokenRequestObj);
+}
+
+async function callCustomAuthTokenApi(tokenRequestObj){
+    console.log("Using following Request for Custom Access Token API: ", tokenRequestObj);
+    let tokenEndpoint = 'auth/token/custom';
+
+    return restApiCallV2(tokenEndpoint, 'POST', tokenRequestObj);
 }
 
 async function callAuthSessionLogoutApi(){
