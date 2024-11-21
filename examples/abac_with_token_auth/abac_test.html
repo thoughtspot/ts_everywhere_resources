@@ -799,8 +799,8 @@ function requestCustomToken (){
 
     // Just for 10.4, where REPLACE is not implemented
     // Send a RESET first, then an APPEND
-    if (persistOption == 'REPLACE'){
-        let resetTokenReq = { 
+    
+    let resetTokenReq = { 
             "username": tokenUsername,
             "org_identifier": orgId,
             "validity_time_in_sec": token_validity_secs,
@@ -814,13 +814,10 @@ function requestCustomToken (){
             resetTokenReq["password"] = tokenPassword;
         }
 
-        let resetTokenResult = callCustomAuthTokenApi(resetTokenReq).then( result => {
-            console.log("Sent a RESET token request to clear any existing values");
-            console.log(result);
-        });
-
+    let finalPersistOption = persistOption;
+    if (persistOption == 'REPLACE'){
         // send APPEND after
-        persistOption = 'APPEND';
+        finalPersistOption = 'APPEND';
     }
 
     let tokenReq = { 
@@ -828,7 +825,7 @@ function requestCustomToken (){
         "org_identifier": orgId,
         "validity_time_in_sec": token_validity_secs,
         "auto_create": false,
-        "persist_option": persistOption
+        "persist_option": finalPersistOption
     };
     if (secretKey != ""){
         tokenReq["secret_key"] = secretKey;
@@ -858,7 +855,7 @@ function requestCustomToken (){
                 console.log(userParameters);
                 tokenReq['parameter_values'] = [];
                 for (const param in pObj) {
-                    let cur_param = {"name": param, "values": pObj[param] };
+                    let cur_param = {"name": param, "values": pObj[param]};
                     tokenReq['parameter_values'].push(cur_param);
 
                 //user_parameters['parameters'].push(runtime_param_section)
@@ -888,12 +885,28 @@ function requestCustomToken (){
     console.log(tokenReq);
 
 
-    let tokenResult = callCustomAuthTokenApi(tokenReq).then( result => {
-        console.log(result);
-        if ("token" in result) {
-            document.getElementById('token-input').value = result['token'];            
-        }
-    });
+    if (persistOption == 'REPLACE'){
+        let resetTokenResult = callCustomAuthTokenApi(resetTokenReq).then( result => {
+            console.log("Sent a RESET token request to clear any existing values");
+            console.log(result);
+        }).then ( result => {
+            let tokenResult = callCustomAuthTokenApi(tokenReq).then( result => {
+            console.log(result);
+            if ("token" in result) {
+                document.getElementById('token-input').value = result['token'];            
+            }
+        });
+        });
+    }
+
+    else{
+        let tokenResult = callCustomAuthTokenApi(tokenReq).then( result => {
+            console.log(result);
+            if ("token" in result) {
+                document.getElementById('token-input').value = result['token'];            
+            }
+        });
+    }
 }
 
 if (tokenType == "full"){
