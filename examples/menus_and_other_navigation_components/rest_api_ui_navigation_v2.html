@@ -180,7 +180,8 @@
         EmbedEvent,
         HostEvent,
         AuthType,
-        prefetch
+        prefetch,
+        tokenizedFetch
     } from 'https://cdn.jsdelivr.net/npm/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js'; // Copied in from GitHub
 
     // Init is all that is needed to establish session to make REST API calls
@@ -225,7 +226,7 @@
         }
         
         // With the async modifier on the function, you add return await to the fetch() call here
-        return await fetch(
+        return await tokenizedFetch(
             apiFullEndpoint,
             fetchArgs
         ).then(response =>
