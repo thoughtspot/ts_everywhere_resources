@@ -11,12 +11,6 @@ This file is the basic web page for embedding.  It controls the layout and contr
 
 This file is a basic style sheet for the application.  It sets some basic colors and fonts.  Changes to this file will only modify the look of the application.
 
-The first is the div into which the code will be embedded by the SDK.  This approach is standard for embedding with the Visual SDK.
-`<div id='embed' class="embed"></div>`
-
-The second is the 
-
-
 ## tse.js
 
 This JavaScript file provides the common framework components for embedding.  It contains the init() call used to initialize the ThoughtSpot connection with no login, along with empty starter functions for embedding.  Note that the example is designed such that it can only demonstrate a single embedded component at a time since there is only one embed DOM object.

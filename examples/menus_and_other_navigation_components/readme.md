@@ -1,1 +1,0 @@
-This example shows how to use the ThoughtSpot V2 REST API to get information about a user and then render various common navigation components (menus, tables, tiles) with links to load the appropriate embed component.

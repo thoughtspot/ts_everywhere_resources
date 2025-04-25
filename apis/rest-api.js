@@ -13,7 +13,7 @@ const arrayify = (valueOrArray) => {
     return [valueOrArray];
   }
   return valueOrArray.slice();
-};
+}
 
 /**
  * Cleans up the URL for the API.
@@ -21,8 +21,8 @@ const arrayify = (valueOrArray) => {
  * @returns {string|*}  The cleaned URL.
  */
 const cleanURL = (url) => {
-  return url.endsWith("/") ? url.substr(0, url.length - 1) : url;
-};
+  return (url.endsWith("/")) ? url.substr(0, url.length - 1) : url
+}
 
 /*-------------------------------------------------- API wrappers ----------------------------------------------------*/
 
@@ -34,19 +34,14 @@ const cleanURL = (url) => {
  * @param rememberme Causes the login to be remembered if true. Defaults to false.
  * @returns {Promise<void>} A promise for the login.  Await to make sure the user is logged in.
  */
-export const tsLogin = async (
-  tsurl,
-  username,
-  password,
-  rememberme = false
-) => {
+export const tsLogin = async (tsurl, username, password, rememberme=false) => {
   console.log(`Logging into ThoughtSpot as ${username}`);
   const loginURL = cleanURL(tsurl) + "/callosum/v1/tspublic/v1/session/login";
 
   // TODO this is common.  Extract as a helper function.
   const apiData = {
-    username: username,
-    password: password,
+    "username": username,
+    "password": password
   };
 
   let formBody = [];
@@ -58,18 +53,18 @@ export const tsLogin = async (
   formBody = formBody.join("&");
 
   await fetch(loginURL, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Accept: "application/json",
-      "X-Requested-By": "ThoughtSpot",
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Accept': 'application/json',
+      'X-Requested-By': 'ThoughtSpot'
     },
-    credentials: "include",
-    body: formBody,
+    credentials: 'include',
+    body: formBody
   })
-    .then((response) => console.log("Logged into ThoughtSpot"))
-    .catch((error) => console.error(error));
-};
+    .then(response => console.log("Logged into ThoughtSpot"))
+    .catch(error => console.error(error));
+}
 
 /**
  * Returns the session info, which includes information about the user and the cluster.
@@ -82,24 +77,18 @@ export const tsLogin = async (
  *   doWhatever
  * }
  */
-export const loginWithToken = async (
-  tsurl,
-  username,
-  auth_token,
-  redirect_url = null
-) => {
+export const loginWithToken = async (tsurl, username, auth_token, redirect_url = null) => {
   console.log(`Logging ${username} into ${tsurl} with token.`);
-  const loginURL =
-    cleanURL(tsurl) + "/callosum/v1/tspublic/v1/session/login/token";
+  const loginURL = cleanURL(tsurl) + '/callosum/v1/tspublic/v1/session/login/token';
 
-  if (!redirect_url) {
+  if (! redirect_url) {
     redirect_url = tsurl;
   }
 
   const apiData = {
-    username: username,
-    auth_token: auth_token,
-    redirect_url: redirect_url,
+    "username": username,
+    "auth_token": auth_token,
+    "redirect_url": redirect_url
   };
 
   let formBody = [];
@@ -111,24 +100,25 @@ export const loginWithToken = async (
   formBody = formBody.join("&");
 
   await fetch(loginURL, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Accept: "text/plain",
-      "X-Requested-By": "ThoughtSpot",
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Accept': 'text/plain',
+      'X-Requested-By': 'ThoughtSpot'
     },
-    credentials: "include",
-    body: formBody,
+    credentials: 'include',
+    body: formBody
   })
-    .then((response) => {
-      console.log("Logged into ThoughtSpot using token");
-      return response;
-    })
-    .catch((error) => {
-      console.error("got an error logging in with token");
-      throw error;
-    });
-};
+  .then(response => {
+    console.log("Logged into ThoughtSpot using token");
+    return response;
+  })
+  .catch(error => {
+    console.error('got an error logging in with token');
+    throw(error);
+  });
+}
+
 
 /**
  * Calls the ThoughtSpot logout service.
@@ -140,17 +130,17 @@ export const tsLogout = async (tsurl) => {
   const logoutURL = cleanURL(tsurl) + "/callosum/v1/tspublic/v1/session/logout";
 
   await fetch(logoutURL, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "X-Requested-By": "ThoughtSpot",
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-Requested-By': 'ThoughtSpot'
     },
-    credentials: "include",
+    credentials: 'include'
   })
-    .then((response) => console.log("Logged out from ThoughtSpot"))
-    .catch((error) => console.error(error));
-};
+    .then(response => console.log("Logged out from ThoughtSpot"))
+    .catch(error => console.error(error));
+}
 
 /**
  * Returns the session info, which includes information about the user and the cluster.
@@ -161,22 +151,22 @@ export const tsLogout = async (tsurl) => {
  * }
  */
 export const getSessionInfo = async (tsurl) => {
-  const sessionInfoURL =
-    cleanURL(tsurl) + "/callosum/v1/tspublic/v1/session/info"; // oct.cl 2021 and later
+  const sessionInfoURL = cleanURL(tsurl) + "/callosum/v1/tspublic/v1/session/info";  // oct.cl 2021 and later
 
-  return await fetch(sessionInfoURL, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "X-Requested-By": "ThoughtSpot",
-    },
-    credentials: "include",
-  })
-    .then((response) => response.json())
-    .catch((error) => {
-      console.error("Unable to get the session info: " + error);
+  return await fetch(
+    sessionInfoURL, {
+      method: 'GET',
+      headers: {
+        "Accept": "application/json",
+        "X-Requested-By": "ThoughtSpot"
+      },
+      credentials: "include"
+    })
+    .then(response =>  response.json())
+    .catch(error => {
+      console.error("Unable to get the session info: " + error)
     });
-};
+}
 
 /**
  * Returns a list of liveboards that the user has access to.
@@ -189,26 +179,25 @@ export const getSessionInfo = async (tsurl) => {
  */
 export const getLiveboardList = async (tsurl) => {
   // Returns the list of liveboards so the user can display them.
-  const liveboardMetadataListURL =
-    cleanURL(tsurl) +
-    "/callosum/v1/tspublic/v1/metadata/listobjectheaders?" +
+  const liveboardMetadataListURL = cleanURL(tsurl) + "/callosum/v1/tspublic/v1/metadata/listobjectheaders?" +
     "type=PINBOARD_ANSWER_BOOK" +
     "&batchsize=-1";
 
-  return await fetch(liveboardMetadataListURL, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "X-Requested-By": "ThoughtSpot",
-    },
-    credentials: "include",
-  })
-    .then((response) => response.json())
-    .then((data) => data)
-    .catch((error) => {
-      console.error("Unable to get the liveboard list: " + error);
+  return await fetch(
+    liveboardMetadataListURL, {
+      method: 'GET',
+      headers: {
+        "Accept": "application/json",
+        "X-Requested-By": "ThoughtSpot"
+      },
+      credentials: "include"
+    })
+    .then(response =>  response.json())
+    .then(data => data)
+    .catch(error => {
+      console.error("Unable to get the liveboard list: " + error)
     });
-};
+}
 
 /**
  * Returns a list of GUIDs for a liveboard with a given name or an empty list if not found.
@@ -221,18 +210,19 @@ export const getLiveboardList = async (tsurl) => {
  * @returns str[] A list of GUIDs (or empty list).
  */
 export const getLiveboardGUIDs = async (tsurl, liveboardName) => {
-  console.log(`Getting liveboard GUIDs from ${tsurl}`);
-  const liveboardGUIDs = [];
-  await getLiveboardList(tsurl).then((liveboards) => {
-    for (let idx = 0; idx < liveboards.length; idx++) {
-      if (liveboards[idx].name === liveboardName) {
-        liveboardGUIDs.push(liveboards[idx].id);
-      }
-    }
-  });
-  console.log(`got liveboard IDs [${liveboardGUIDs}]`);
-  return liveboardGUIDs;
-};
+
+    console.log(`Getting liveboard GUIDs from ${tsurl}`)
+    const liveboardGUIDs = [];
+    await getLiveboardList(tsurl).then(liveboards => {
+        for (let idx = 0; idx < liveboards.length; idx++) {
+          if (liveboards[idx].name === liveboardName) {
+            liveboardGUIDs.push(liveboards[idx].id);
+          }
+        }
+    });
+    console.log(`got liveboard IDs [${liveboardGUIDs}]`)
+    return liveboardGUIDs;
+}
 
 /**
  * Returns a promise with the list of visualizations for the given liveboard.
@@ -245,30 +235,23 @@ export const getLiveboardGUIDs = async (tsurl, liveboardName) => {
  * @returns {Promise<any>}
  */
 export const getVisualizationList = async (tsurl, liveboardId) => {
-  const vizMetadataListURL =
-    cleanURL(tsurl) +
-    "/callosum/v1/tspublic/v1/metadata/listvizheaders?id=" +
-    liveboardId;
+  const vizMetadataListURL = cleanURL(tsurl) + "/callosum/v1/tspublic/v1/metadata/listvizheaders?id=" + liveboardId;
 
-  return await fetch(vizMetadataListURL, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "X-Requested-By": "ThoughtSpot",
-    },
-    credentials: "include",
-  })
-    .then((response) => response.json())
-    .then((data) => data)
-    .catch((error) => {
-      console.error(
-        "Unable to get the visualization list for liveboard " +
-          liveboardId +
-          ": " +
-          error
-      );
+  return await fetch(
+    vizMetadataListURL, {
+      method: 'GET',
+      headers: {
+        "Accept": "application/json",
+        "X-Requested-By": "ThoughtSpot"
+      },
+      credentials: "include"
+    })
+    .then(response =>  response.json())
+    .then(data => data)
+    .catch(error => {
+      console.error("Unable to get the visualization list for liveboard " + liveboardId + ": " + error)
     });
-};
+}
 
 /**
  * Returns a list of GUIDs for a liveboard visualization with a given name or an empty list if not found.
@@ -282,20 +265,19 @@ export const getVisualizationList = async (tsurl, liveboardId) => {
  * @returns str[] A list of GUIDs (or empty list).
  */
 export const getLiveboardVizGUIDs = async (tsurl, liveboardGUID, vizName) => {
-  console.log(
-    `Getting viz GUIDs from ${tsurl} for viz ${liveboardGUID}::${vizName}`
-  );
+
+  console.log(`Getting viz GUIDs from ${tsurl} for viz ${liveboardGUID}::${vizName}`);
   const vizGUIDs = [];
-  await getVisualizationList(tsurl, liveboardGUID).then((vizList) => {
+  await getVisualizationList(tsurl, liveboardGUID).then(vizList => {
     for (let idx = 0; idx < vizList.length; idx++) {
       if (vizList[idx].name === vizName) {
         vizGUIDs.push(vizList[idx].id);
       }
     }
   });
-  console.log(`got viz IDs [${vizGUIDs}]`);
+  console.log(`got viz IDs [${vizGUIDs}]`)
   return vizGUIDs;
-};
+}
 
 /**
  * Returns an array of worksheet metadata objects.
@@ -307,28 +289,27 @@ export const getLiveboardVizGUIDs = async (tsurl, liveboardGUID, vizName) => {
  * @returns {Promise<any>}
  */
 export const getWorksheetList = async (tsurl) => {
-  const worksheetMetadataListURL = encodeURI(
-    cleanURL(tsurl) +
-      "/callosum/v1/tspublic/v1/metadata/listobjectheaders?" +
-      "type=LOGICAL_TABLE&" +
-      "subtypes=[WORKSHEET]" +
-      "&batchsize=-1"
+  const worksheetMetadataListURL = encodeURI(cleanURL(tsurl) + "/callosum/v1/tspublic/v1/metadata/listobjectheaders?" +
+    "type=LOGICAL_TABLE&" +
+    "subtypes=[WORKSHEET]" +
+    "&batchsize=-1"
   );
 
-  return await fetch(worksheetMetadataListURL, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "X-Requested-By": "ThoughtSpot",
-    },
-    credentials: "include",
-  })
-    .then((response) => response.json())
-    .then((data) => data)
-    .catch((error) => {
+  return await fetch(
+    worksheetMetadataListURL, {
+      method: 'GET',
+      headers: {
+        "Accept": "application/json",
+        "X-Requested-By": "ThoughtSpot"
+      },
+      credentials: "include"
+    })
+    .then(response =>  response.json())
+    .then(data => data)
+    .catch(error => {
       console.error("Unable to get the list of worksheets: " + error);
     });
-};
+}
 
 /**
  * Returns a list of GUIDs for a liveboard visualization with a given name or an empty list if not found.
@@ -341,18 +322,19 @@ export const getWorksheetList = async (tsurl) => {
  * @returns str[] A list of GUIDs (or empty list).
  */
 export const getWorksheetGUIDs = async (tsurl, worksheetName) => {
+
   console.log(`Getting viz GUIDs from ${tsurl} for worksheet ${worksheetName}`);
   const worksheetGUIDs = [];
-  await getWorksheetList(tsurl).then((worksheetList) => {
+  await getWorksheetList(tsurl).then(worksheetList => {
     for (let idx = 0; idx < worksheetList.length; idx++) {
       if (worksheetList[idx].name === worksheetName) {
         worksheetGUIDs.push(worksheetList[idx].id);
       }
     }
   });
-  console.log(`got worksheet IDs [${worksheetGUIDs}]`);
+  console.log(`got worksheet IDs [${worksheetGUIDs}]`)
   return worksheetGUIDs;
-};
+}
 
 /**
  * Returns the data object for the liveboard and all of the vizualizations specified, or all if not specified.
@@ -373,196 +355,50 @@ export const getWorksheetGUIDs = async (tsurl, worksheetName) => {
  * @returns {Promise<any|void>} A promise that will return the data in JSON form.
  */
 export const getLiveboardData = async (tsurl, liveboardId, vizIds, filters) => {
-  console.log(
-    `Getting data from liveboard ${liveboardId} and visualization(s) ${vizIds}`
-  );
-  let getLiveboardDataURL = `${cleanURL(
-    tsurl
-  )}/callosum/v1/tspublic/v1/pinboarddata?batchSize=-1&id=${liveboardId}`;
+  console.log(`Getting data from liveboard ${liveboardId} and visualization(s) ${vizIds}`)
+  let getLiveboardDataURL = `${cleanURL(tsurl)}/callosum/v1/tspublic/v1/pinboarddata?batchSize=-1&id=${liveboardId}`;
 
-  if (vizIds) {
-    // if vizIds were specified, they are optional
-    if (!Array.isArray(vizIds)) {
-      // assume is a string and convert to an array.
+  if (vizIds) { // if vizIds were specified, they are optional
+    if (! (Array.isArray(vizIds))) { // assume is a string and convert to an array.
       vizIds = [vizIds];
     }
 
     // TODO add handling for invalid types.  Currently only support string and array.
     const formattedVizIds = `["${vizIds.join('","')}"]`;
-    getLiveboardDataURL += "&vizid=" + formattedVizIds;
+    getLiveboardDataURL += '&vizid=' + formattedVizIds;
   }
 
   if (filters) {
     let count = 1;
-    for (const f of filters) {
-      // { columnName, operator, values }
+    for (const f of filters) { // { columnName, operator, values }
       getLiveboardDataURL += `&col${count}=${f.columnName}&op${count}=${f.operator}`;
       if (Array.isArray(f.values)) {
         for (const v of f.values) {
           getLiveboardDataURL += `&val${count}=${v}`;
         }
-      } else {
+      }
+      else {
         getLiveboardDataURL += `&val${count}=${f.values}`;
       }
       count++;
     }
   }
 
-  return await fetch(encodeURI(getLiveboardDataURL), {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "X-Requested-By": "ThoughtSpot",
-    },
-    credentials: "include",
-  })
-    .then((response) => response.json())
-    .then((data) => data)
-    .catch((error) => {
-      console.error(
-        `Unable to get the visualization list for liveboard ${liveboardId}: ${error}`
-      );
+  return await fetch(
+    encodeURI(getLiveboardDataURL), {
+      method: 'POST',
+      headers: {
+        "Accept": "application/json",
+        "X-Requested-By": "ThoughtSpot"
+      },
+      credentials: "include"
+    })
+    .then(response =>  response.json())
+    .then(data => data)
+    .catch(error => {
+      console.error(`Unable to get the visualization list for liveboard ${liveboardId}: ${error}`);
     });
-};
-
-/**
- * Returns the data object for the liveboard and all of the vizualizations specified, or all if not specified.
- * Currently returns a JSON object as defined in
- * https://docs.thoughtspot.com/latest/app-integrate/reference/pinboarddata.html
- * Example:
-     getLiveboardDataV2(tsurl, liveboardId, vizId).then((response) => {
-       const liveboardData = LiveboardData.createFromJSON(response);
-       const firstVizId = Object.keys(liveboardData.vizData)[0];
-       const html = tabularDataToHTML(liveboardData.vizData[firstVizId]);
-       // display the table in the application.
-     });
- * @param tsurl The URL for the ThoughtSpot cluster.
- * @param liveboardId The GUID for the liveboard to get data for.
- * @param vizIds Optional GUIDs to only get certain visualizations.  String or array.
- * @returns {Promise<any|void>} A promise that will return the data in JSON form.
- */
-export const getLiveboardDataV2 = async (tsurl, liveboardId, vizIds) => {
-  console.log(
-    `Getting data from liveboard ${liveboardId} and visualization(s) ${vizIds}`
-  );
-  let getLiveboardDataURL = `${cleanURL(
-    tsurl
-  )}/api/rest/2.0/metadata/liveboard/data`;
-
-  const apiData = {
-    metadata_identifier: liveboardId,
-  };
-
-  if (vizIds) {
-    // add viz ids if any were specified
-    vizIds = Array.isArray[vizIds] ? vizIds : [vizIds];
-    apiData["visualization_identifiers"] = vizIds;
-  }
-
-  return await fetch(encodeURI(getLiveboardDataURL), {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "X-Requested-By": "ThoughtSpot",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(apiData),
-    credentials: "include",
-  })
-    .then((response) => response.json())
-    .then((data) => data)
-    .catch((error) => {
-      console.error(
-        `Unable to get the visualization list for liveboard ${liveboardId}: ${error}`
-      );
-      throw error;
-    });
-};
-
-/**
- * Calls the search data API and returns a promise that can be used to get the search data JSON object.
- * Example:
-      getSearchDataV2(tsurl, worksheetId, search).then((response) => {
-          const searchData = SearchData.createFromJSON(response);
-          const html = tabularDataToHTML(searchData);
-          // display the table in the application.
-      });
- * @param tsurl The URL for the ThoughtSpot cluster.
- * @param worksheetId The GUID for the worksheet to search against.
- * @param search The search using the proper format (see TS documentation).
- * @returns {Promise<any|void>} A promise that will return the data in JSON form.
- */
-export const getSearchDataV2 = async (tsurl, worksheetId, search) => {
-  console.log(
-    `Getting data from the SearchAPI from worksheet ${worksheetId} with search ${search}`
-  );
-  let getSearchDataURL = `${cleanURL(tsurl)}/api/rest/2.0/searchdata?`;
-  //getSearchDataURL += `"data_format=compact&record_size=-1&logical_table_identifier=${worksheetId}&query_string=${search}`;
-
-  const apiData = {
-    data_format: "COMPACT",
-    logical_table_identifier: worksheetId,
-    query_string: search,
-  };
-
-  return await fetch(encodeURI(getSearchDataURL), {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "X-Requested-By": "ThoughtSpot",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(apiData),
-    credentials: "include",
-  })
-    .then((response) => response.json())
-    .then((data) => data)
-    .catch((error) => {
-      console.error(`Error getting search data ${error}`);
-      throw error;
-    });
-};
-
-/**
- * Calls the search data API and returns a promise that can be used to get the search data JSON object.
- * Example:
-      getAnswerDataV2(tsurl, worksheetId, search).then((response) => {
-          const searchData = SearchData.createFromJSON(response);
-          const html = tabularDataToHTML(searchData);
-          // display the table in the application.
-      });
- * @param tsurl The URL for the ThoughtSpot cluster.
- * @param answerId The GUID for the saved answer.
- * @returns {Promise<any|void>} A promise that will return the data in JSON form.
- */
-export const getAnswerDataV2 = async (tsurl, answerId) => {
-  console.log(
-    `Getting data from the answer/data from answer ${answerId}`
-  );
-  let getSearchDataURL = `${cleanURL(tsurl)}/api/rest/2.0/metadata/answer/data`;
-
-  const apiData = {
-    data_format: "COMPACT",
-    metadata_identifier: answerId,
-  };
-
-  return await fetch(encodeURI(getSearchDataURL), {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "X-Requested-By": "ThoughtSpot",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(apiData),
-    credentials: "include",
-  })
-    .then((response) => response.json())
-    .then((data) => data)
-    .catch((error) => {
-      console.error(`Error getting search data ${error}`);
-      throw error;
-    });
-};
+}
 
 /**
  * Calls the search data API and returns a promise that can be used to get the search data JSON object.
@@ -578,26 +414,23 @@ export const getAnswerDataV2 = async (tsurl, answerId) => {
  * @returns {Promise<any|void>} A promise that will return the data in JSON form.
  */
 export const getSearchData = async (tsurl, worksheetId, search) => {
-  console.log(
-    `Getting data from the SearchAPI from worksheet ${worksheetId} with search ${search}`
-  );
-  let getSearchDataURL = `${cleanURL(
-    tsurl
-  )}/callosum/v1/tspublic/v1/searchdata?`;
+  console.log(`Getting data from the SearchAPI from worksheet ${worksheetId} with search ${search}`);
+  let getSearchDataURL = `${cleanURL(tsurl)}/callosum/v1/tspublic/v1/searchdata?`;
   getSearchDataURL += `"batchSize=-1&data_source_guid=${worksheetId}&query_string=${search}`;
 
-  return await fetch(encodeURI(getSearchDataURL), {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "X-Requested-By": "ThoughtSpot",
-    },
-    credentials: "include",
-  })
-    .then((response) => response.json())
-    .then((data) => data)
-    .catch((error) => console.error(`Error getting search data ${error}`));
-};
+  return await fetch(
+    encodeURI(getSearchDataURL), {
+      method: 'POST',
+      headers: {
+        "Accept": "application/json",
+        "X-Requested-By": "ThoughtSpot"
+      },
+      credentials: "include",
+    })
+    .then(response => response.json())
+    .then(data => data)
+    .catch(error => console.error(`Error getting search data ${error}`));
+}
 
 /**
  * Downloads a list of liveboard visualizations as PDF.  If the vizIDs aren't provided, then downloads the
@@ -618,10 +451,8 @@ export const getSearchData = async (tsurl, worksheetId, search) => {
  *   - include_filter_page true (default) or false.  If true, a page of current filters is shown.
  * @returns {Promise<any|void>} A promise that will return the data in JSON form.
  */
-export const downloadLiveboardPDF = async (tsurl, liveboard, options) => {
-  let downloadURL = `${cleanURL(
-    tsurl
-  )}/callosum/v1/tspublic/v1/export/pinboard/pdf`;
+ export const downloadLiveboardPDF = async (tsurl, liveboard, options ) => {
+  let downloadURL = `${cleanURL(tsurl)}/callosum/v1/tspublic/v1/export/pinboard/pdf`;
 
   // Create a new FormData object with the passed in options.
   const apiData = new FormData();
@@ -635,44 +466,45 @@ export const downloadLiveboardPDF = async (tsurl, liveboard, options) => {
   console.log(liveboard);
   if (liveboard.length < 40) {
     apiData.set("id", liveboard);
-  } else {
-    apiData.set("transient_data", liveboard); // TODO test with transient data and see if there is a better option.
+  }
+  else {
+    apiData.set("transient_data", liveboard);  // TODO test with transient data and see if there is a better option.
   }
 
   let layout_type = options.layout_type;
   const vizIDs = options.visualization_ids;
   if (layout_type) {
-    if (vizIDs) {
-      // must be visualization for vizzes.
+    if (vizIDs) { // must be visualization for vizzes.
       apiData.set("layout_type", "VISUALIZATION"); // must be viz mode for specific visualizations.
       if (Array.isArray(vizIDs)) {
-        apiData.set("visualization_ids", JSON.stringify(vizIDs)); // make sure this is stringified.
+        apiData.set("visualization_ids", JSON.stringify(vizIDs));  // make sure this is stringified.
       }
     }
-    if (!["PINBOARD", "VISUALIZATION"].includes(layout_type)) {
-      throw `Invalid layout type of ${layout_type}`;
+    if (! ['PINBOARD', 'VISUALIZATION'].includes(layout_type)) {
+      throw (`Invalid layout type of ${layout_type}`);
     }
   }
 
-  return await fetch(downloadURL, {
-    method: "POST",
-    headers: {
-      Accept: "application/octet-stream",
-      "Accept-Encoding": "gzip, deflate",
-      "X-Requested-By": "ThoughtSpot",
-      // don't set: https://developer.mozilla.org/en-US/docs/Web/API/FormData/Using_FormData_Objects
-      //"Content-Type": "multipart/form-data",
-    },
-    credentials: "include",
-    body: apiData,
-  })
-    .then((response) => {
-      response.blob().then((blob) => {
-        downloadBlobToFile(blob, liveboard + ".pdf");
-      });
+  return await fetch(
+    downloadURL, {
+      method: 'POST',
+      headers: {
+        "Accept": "application/octet-stream",
+        "Accept-Encoding": "gzip, deflate",
+        "X-Requested-By": "ThoughtSpot",
+        // don't set: https://developer.mozilla.org/en-US/docs/Web/API/FormData/Using_FormData_Objects
+        //"Content-Type": "multipart/form-data",
+      },
+      credentials: "include",
+      body: apiData,
     })
-    .catch((error) => console.error(error));
-};
+    .then(response => {
+      response.blob().then(blob => {
+        downloadBlobToFile(blob, liveboard + ".pdf");
+      })
+    })
+    .catch(error => console.error(error));
+}
 
 /**
  * Downloads the TML for the given object(s) to a file.  The filename is provided by the API.
@@ -682,22 +514,18 @@ export const downloadLiveboardPDF = async (tsurl, liveboard, options) => {
  * @param export_associated If true, gets associated content.
  * @returns {Promise<void>}
  */
-export const downloadTML = async (
-  tsurl,
-  objectIDs,
-  formattype = "YAML",
-  export_associated = false
-) => {
+export const downloadTML = async (tsurl, objectIDs,
+                                          formattype = 'YAML',
+                                          export_associated=false) => {
+
   console.log(`Downloading TML for ${objectIDs}`);
-  let downloadURL = `${cleanURL(
-    tsurl
-  )}/callosum/v1/tspublic/v1/metadata/tml/export`;
+  let downloadURL = `${cleanURL(tsurl)}/callosum/v1/tspublic/v1/metadata/tml/export`;
 
   const getObjectIDs = arrayify(objectIDs);
   const apiData = {
-    export_ids: JSON.stringify(getObjectIDs),
-    formattype: formattype,
-    export_associated: export_associated,
+    "export_ids": JSON.stringify(getObjectIDs),
+    "formattype": formattype,
+    "export_associated": export_associated,
   };
 
   let formBody = [];
@@ -710,20 +538,19 @@ export const downloadTML = async (
 
   console.log(`calling ${encodeURI(downloadURL)}`);
 
-  return await fetch(downloadURL, {
-    method: "POST",
-    headers: {
-      Accept: "text/plain",
-      "X-Requested-By": "ThoughtSpot",
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    credentials: "include",
-    body: formBody,
-  })
-    .then((response) =>
-      response.json().then((tmlResponse) => {
-        for (const tml of tmlResponse.object) {
-          // if you get related, then there are a bunch of files downloaded.
+  return await fetch(
+    downloadURL, {
+      method: 'POST',
+      headers: {
+        "Accept": "text/plain",
+        "X-Requested-By": "ThoughtSpot",
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      credentials: "include",
+      body: formBody,
+    })
+    .then (response => response.json().then(tmlResponse => {
+        for (const tml of tmlResponse.object) {  // if you get related, then there are a bunch of files downloaded.
           const edoc = tml.edoc;
           const filename = tml.info.filename;
           console.log(`${filename}: ${edoc}`);
@@ -732,8 +559,8 @@ export const downloadTML = async (
         }
       })
     )
-    .catch((error) => console.error(`Error getting object TML ${error}`));
-};
+    .catch(error => console.error(`Error getting object TML ${error}`));
+}
 
 /**
  * Downloads text to a file.
@@ -741,9 +568,9 @@ export const downloadTML = async (
  * @param filename Filename to download to.
  */
 export const downloadTextToFile = (text, filename) => {
-  const blob = new Blob([text], { type: "text/plain" });
+  const blob = new Blob([text], {type: "text/plain"});
   downloadBlobToFile(blob, filename);
-};
+}
 
 /**
  * Downloads the blob to a file.  This is assumed to be called from a web document since it modifies the DOM document.
@@ -751,11 +578,12 @@ export const downloadTextToFile = (text, filename) => {
  * @param filename The name of the file to write to.
  */
 export const downloadBlobToFile = (blob, filename) => {
+
   const link = document.createElement("a");
   link.setAttribute("href", window.URL.createObjectURL(blob));
   link.setAttribute("download", filename);
   document.body.appendChild(link); // Required for Firefox
   link.click(); // This will download the PDF with the given name.
 
-  window.URL.revokeObjectURL(link); // cleanup.
-};
+  window.URL.revokeObjectURL(link);  // cleanup.
+}

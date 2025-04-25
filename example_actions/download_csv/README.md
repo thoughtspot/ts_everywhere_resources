@@ -23,7 +23,7 @@ const embed = new SearchEmbed("#embed", {
 });
 ~~~
 
-The dataSources contains the ID for a data source to have preselected.  You can find the ID using the Developer Playground.
+The dataSources constains the ID for a data source to have preselected.  You can find the ID using the Developer Playground.
 
 Now, when rendering, add the hook for the custom action:
 
@@ -32,8 +32,7 @@ embed
 .on(EmbedEvent.CustomAction, (payload) => {
   // The id is defined when creating the Custom Action in ThoughtSpot. 
   // Checking id attribute allows correct routing of multiple Custom Actions
-  const downloadActionId = 'download-csv';
- if (payload.id === downloadActionId || payload.data.id === downloadActionId) {
+ if (payload.data.id === 'download-csv') {
    downloadCSV(payload);
  }
 })
