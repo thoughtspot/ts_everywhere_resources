@@ -1,7 +1,5 @@
 /*
- * The completed script for the ThoughtSpot Everywhere tutorial.  Your solution should look similar.
- * It's recommended to refer to the documentation and Developer Playground to try to get it working before
- * using this file.
+ * This is the script to update for the ThoughtSpot Everywhere tutorial.
  */
 import {ActionData, tabularDataToHTML} from "./dataclasses.js";
 
@@ -41,21 +39,7 @@ const closeModal = () => {
 }
 
 const showData = (payload) => {
-  const data = payload.data;
-  if (data.id === 'show-data') {
-    // For either action, simply display the data as a table.
-    const actionData = ActionData.createFromJSON(payload);
-    
-    const html = tabularDataToHTML(actionData);
-    const dataContentElement = document.getElementById('modal-data-content');
-    dataContentElement.innerHTML = html;
-
-    const dataElement = document.getElementById('show-data');
-    dataElement.style.display = 'block';
-  }
-  else {
-    console.log(`Got unknown custom actions ${data.id}`);
-  }
+  // TODO - add code to handle the custom action callback.
 }
 
 // Create and manage the login screen.
@@ -65,10 +49,7 @@ const onLogin = () => {
   //const username = document.getElementById('username').value;
   //const password = document.getElementById('password').value;
 
-  init({
-    thoughtSpotHost: tsURL,
-    authType: AuthType.None,
-  });
+  // TODO - add code to initialize the connection to ThoughtSpot
 
   hideDiv('login');
   showDiv('landing-page');
@@ -87,66 +68,31 @@ const showMainApp = () => {
 const onSearch = () => {
   showMainApp();
 
-  const embed = new SearchEmbed('#embed', {
-    frameParams: {},
-    collapseDataSources: false,
-    hideResults: false,
-    disabledActions: [Action.SpotIQAnalyze],
-    disabledActionReason: 'Enterprise feature.',
-    hiddenActions: [Action.Download, Action.Share, Action.DownloadAsCsv],
-    hideDataSources: false,
-  });
-
-  embed
-    .on(EmbedEvent.CustomAction, (payload) => {
-        showData(payload);
-    })
-    .render();
+  // TODO replace the alert and return with the proper code to embed search.
+  alert("Search not embedded");
 }
 
 const onLiveboard = () => {
+
   showMainApp();
 
-  const embed = new PinboardEmbed("#embed", {
-      frameParams: {},
-      pinboardId: "d084c256-e284-4fc4-b80c-111cb606449a",  // TODO - set to your liveboard ID.
-      disabledActions: [Action.DownloadAsPdf],
-      disabledActionReason: 'Enterprise feature.',
-      hiddenActions: [Action.LiveboardInfo]
-  });
-
-  embed.render();
+  // TODO replace the alert with the proper embed a liveboard.
+  alert("Liveboard not embedded");
 }
 
 const onVisualization = () => {
   showMainApp();
 
-  const embed = new PinboardEmbed('#embed', {
-    frameParams: {height: "50vw"},
-    pinboardId: 'd084c256-e284-4fc4-b80c-111cb606449a',  // TODO - set to your liveboard ID.
-    vizId: '856edeb8-2c86-4697-8bfb-c4dcee3a679a',       // TODO - set to your visualization ID.
-    disabledActions: [Action.Download],
-    disabledActionReason: 'Enterprise feature.',
-    hiddenActions: [Action.SpotIQAnalyze]
-  });
-
-  embed.render();
+  // TODO replace the alert with the proper code to embed a visualization.
+  alert("Visualization not embedded");
 }
 
 // Embed the full application.
 const onFull = () => {
   showMainApp();
 
-  const embed = new AppEmbed('#embed', {
-    frameParams: {},
-    showPrimaryNavbar: false,  // set to true to show the ThoughtSpot navbar
-    pageId: Page.Home, // loads the Home tab, but you can start on any main tab - try Page.Search
-    disabledActions: [], // list of any actions you don't want the users to use, but still see
-    disabledActionReason: 'No sharing allowed.', // tool tip the user will see
-    hiddenActions: [] // totally hide a feature from a user
-  });
-
-  embed.render();
+  // TODO replace the alert with the proper code the full application.
+  alert("Full application not embedded");
 }
 
 export { onLogin, onFull, onSearch, onLiveboard, onVisualization };

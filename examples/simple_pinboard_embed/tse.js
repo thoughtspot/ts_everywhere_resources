@@ -6,7 +6,7 @@
 
 const {
   init,
-  LiveboardEmbed,
+  PinboardEmbed,
   AuthType,
 } = tsembed;
 
@@ -33,7 +33,7 @@ const tsInit = () => {
 const getParameters = () => {
   // Gets the parameters from the location.
   // Called as http(s)://server.com?pinboardid=<ID>&vizid=<ID>
-  // Returns an array: [liveboardId, vizId];
+  // Returns an array: [pinboardId, vizId];
   const queryString = window.location.search;
   const urlParams = new URLSearchParams(queryString);
   return [urlParams.get('pinboardid'), urlParams.get('vizid')];
@@ -48,7 +48,7 @@ const tsEmbed = (pinboardId, vizId) => {
     return
   }
 
-  const embed = new LiveboardEmbed('#embed', {
+  const embed = new PinboardEmbed('#embed', {
     frameParams: {},
     pinboardId: pinboardId,
     vizId: vizId,

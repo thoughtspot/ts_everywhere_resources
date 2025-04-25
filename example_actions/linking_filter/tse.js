@@ -1,6 +1,6 @@
 /*
-This example shows how to implement content linking in liveboards.
-This is accomplished by creating a context filter and then using the selected value to refresh the liveboard.
+This example shows how to implement content linking in pinboards.
+This is accomplished by creating a context filter and then using the selected value to refresh the pinboard.
 */
 
 // Add additional imports as needed.
@@ -8,7 +8,7 @@ import {
   init,
   AuthType,
   EmbedEvent,
-  LiveboardEmbed,
+  PinboardEmbed,
   RuntimeFilterOp,
 } from 'https://unpkg.com/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
 
@@ -45,14 +45,14 @@ const filterData = (payload) => {
 const embedPinboard = () => {
 
   // Sample embed.  The pinboardId GUID needs to exist in your system.
-  const embed = new LiveboardEmbed("#embed", {
+  const embed = new PinboardEmbed("#embed", {
     frameParams: {},
-    pinboardId: "b22eabd5-6fa5-4342-847e-ca2abd5d54cc",
-    runtimeFilters: [{
-      columnName: columnNameToFilter, // eg: color
-      operator: RuntimeFilterOp.EQ,
-      values: filterValues // eg: red
-    }],
+     pinboardId: "b22eabd5-6fa5-4342-847e-ca2abd5d54cc", // Replace with the GUID of a Pinboard in your instance
+     runtimeFilters: [{
+          columnName: columnNameToFilter, // eg: color
+          operator: RuntimeFilterOp.EQ,
+          values: filterValues // eg: red
+     }],
   });
 
   embed
@@ -65,7 +65,5 @@ const embedPinboard = () => {
   .render();
 
 }
-
-document.getElementById('thoughtspot-server').innerHTML = `ThoughtSpot Server: ${tsURL}`;
 
 window.onload = embed;

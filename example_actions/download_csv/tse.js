@@ -1,6 +1,6 @@
 /*
 This example shows how to embed use a custom action to download data as a CSV file.  This example only works with
-main actions in Search and Answers.  It will not work in Context Actions or Liveboard Actions.
+main actions in Search and Answers.  It will not work in Context Actions or Pinboard Actions.
  */
 // Add additional imports as needed.
 import {
@@ -49,19 +49,17 @@ const embedSearch = () => {
   // Data sources GUID must be updated for your environment (or omitted).
   const embed = new SearchEmbed("#embed", {
     frameParams: {},
+    dataSources: ["cd252e5c-b552-49a8-821d-3eadaa049cca"],
   });
 
   embed
   .on(EmbedEvent.CustomAction, (payload) => {
-    // The id is defined when creating the Custom Action in ThoughtSpot.
-    // Checking id attribute allows correct routing of multiple Custom Actions
+    // The id is defined when creating the Custom Action in ThoughtSpot. Checking id attribute allows correct routing of multiple Custom Actions
     if (payload.data.id === 'download-csv') {
       downloadCSV(payload);
     }
   })
   .render();
 }
-
-document.getElementById('thoughtspot-server').innerHTML = `ThoughtSpot Server: ${tsURL}`;
 
 window.onload = embed;

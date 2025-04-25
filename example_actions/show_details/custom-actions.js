@@ -2,25 +2,25 @@
  * This script contains classes and functions for using custom actions.
  */
 import {
-  LiveboardContextActionData
-} from "/apis/dataclasses.js";
+  PinboardContextActionData
+} from "../../apis/dataclasses.js";
 
 import {
-  LiveboardEmbed,
+  PinboardEmbed,
   RuntimeFilterOp,
 } from 'https://unpkg.com/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
 
 /**
- * Shows the payload as JSON.  This only works with context actions on liveboards.
+ * Shows the payload as JSON.  This only works with context actions on pinboards.
  * @param payload The JSON payload to show.
  */
 const showPayload = (payload) => {
-  const liveboardContextData = LiveboardContextActionData.createFromJSON(payload);
+  const pinboardContextData = PinboardContextActionData.createFromJSON(payload);
 
   // Only gets the first column value.
-  const filter = liveboardContextData.data[liveboardContextData.columnNames[0]];
+  const filter = pinboardContextData.data[pinboardContextData.columnNames[0]];
   // Now show the details with the filter applied in a popup.
-  const embed = new LiveboardEmbed("#embed-popup", {
+  const embed = new PinboardEmbed("#embed-popup", {
     frameParams: { width: "80vw", height: "60vw" },
     disabledActions: [],
     disabledActionReason: "Reason for disabling",

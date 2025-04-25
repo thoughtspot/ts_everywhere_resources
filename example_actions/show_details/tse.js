@@ -7,7 +7,7 @@ import {
   init,
   AuthType,
   EmbedEvent,
-  LiveboardEmbed,
+  PinboardEmbed,
 } from 'https://unpkg.com/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
 
 import {
@@ -44,17 +44,13 @@ const tsInit = () => {
  */
 const embedViz = () => {
 
-  const embed = new LiveboardEmbed("#embed", {
+  const embed = new PinboardEmbed("#embed", {
     frameParams: {height: "70vw", width: "95vw"},
      pinboardId: "32f36678-025d-4c30-80de-0b47f344d688",
-     //vizId: "9ccd4a61-1376-4813-87d3-ea0f70bbd242",
-    vizId: "579d74ed-41ba-4b3f-bfa2-04becaec8e6e",
+     vizId: "9ccd4a61-1376-4813-87d3-ea0f70bbd242",
   });
 
   embed
-  .on(EmbedEvent.VizPointDoubleClick, payload => {
-      cosole.log(payload);
-  })
   .on(EmbedEvent.CustomAction, payload => {
     if (payload.id === 'show-more') {
       showPayload(payload)

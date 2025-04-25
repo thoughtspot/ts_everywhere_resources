@@ -8,7 +8,7 @@
 import {
   init,
   AuthType,
-  LiveboardEmbed,
+  PinboardEmbed,
 } from 'https://unpkg.com/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
 
 const tsURL = "https://try.thoughtspot.cloud/";  // Set to the URL for your system.
@@ -40,7 +40,7 @@ let vizId = "7e242033-2db1-41e4-ae2c-dd1488019059";
  * Shows the visualization.  The daily view is chosen by default.
  */
 const embedPinboardViz = () => {
-  const embed = new LiveboardEmbed("#embed", {
+  const embed = new PinboardEmbed("#embed", {
     frameParams: { width:"100vw", height:"70vw" },
     pinboardId: "ff942c07-e1b6-4b5d-9d3b-51fac0cd7b8f",
     vizId: vizId,

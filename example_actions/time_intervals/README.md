@@ -2,13 +2,13 @@
 
 This example shows how you can add the ability to select different time intervals for embedded visualizations.  ThoughtSpot runtime filters only allow you to specify dates, not different intervals.  This example solves the problem by using a pinboard with multiple visualizations at different time intervals.  Then the user selects the time interval from a dropdown, which causes the time interval to be updated.
 
-![Weekly view of sales](images/weekly-view.png)
+![Weekly view of sales](weekly-view.png)
 
 ## Setup
 
 First, create a pinboard with visualizations at different time intervals like the one shown.
 
-![Pinboard with visualizations](images/pinboard.png)
+![Pinboard with visualizations](./pinboard.png)
 
 Next, update the visualization IDs in the `<select>` options in `index.html`, e.g.
 
@@ -21,17 +21,17 @@ Next, update the visualization IDs in the `<select>` options in `index.html`, e.
 </select>
 ~~~
 
-Finally, update the vizId to start with in the LiveboardEmbed object in tse.js.
+Finally, update the vizId to start with in the PinboardEmbed object in tse.js.
 
 `let vizId = "7e242033-2db1-41e4-ae2c-dd1488019059";`
 
 ## Solution
 
-In the `embedLiveboardViz` function, add the embed component.
+In the `embedPinboardViz` function, add the embed component.
 
 ~~~
-const embedLiveboardViz = () => {
-  const embed = new LiveboardEmbed("#embed", {
+const embedPinboardViz = () => {
+  const embed = new PinboardEmbed("#embed", {
     frameParams: { width:"100vw", height:"70vw" },
     pinboardId: "ff942c07-e1b6-4b5d-9d3b-51fac0cd7b8f",
     vizId: vizId,

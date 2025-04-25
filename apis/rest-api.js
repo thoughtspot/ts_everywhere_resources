@@ -67,60 +67,6 @@ export const tsLogin = async (tsurl, username, password, rememberme=false) => {
 }
 
 /**
- * Returns the session info, which includes information about the user and the cluster.
- * @param tsurl The URL for the TS cluster.
- * @param username The username to authenticate for.
- * @param auth_token The token generated for the username.
- * @param redirect_url The URL to redirect to.  If left empty, will redirect to home.
- * @returns {Promise<any>}  A promise with JSON that has the info.
- * loginWithToken.then(info => {
- *   doWhatever
- * }
- */
-export const loginWithToken = async (tsurl, username, auth_token, redirect_url = null) => {
-  console.log(`Logging ${username} into ${tsurl} with token.`);
-  const loginURL = cleanURL(tsurl) + '/callosum/v1/tspublic/v1/session/login/token';
-
-  if (! redirect_url) {
-    redirect_url = tsurl;
-  }
-
-  const apiData = {
-    "username": username,
-    "auth_token": auth_token,
-    "redirect_url": redirect_url
-  };
-
-  let formBody = [];
-  for (const k of Object.keys(apiData)) {
-    const key = encodeURIComponent(k);
-    const value = encodeURIComponent(apiData[k]);
-    formBody.push(`${k}=${value}`);
-  }
-  formBody = formBody.join("&");
-
-  await fetch(loginURL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Accept': 'text/plain',
-      'X-Requested-By': 'ThoughtSpot'
-    },
-    credentials: 'include',
-    body: formBody
-  })
-  .then(response => {
-    console.log("Logged into ThoughtSpot using token");
-    return response;
-  })
-  .catch(error => {
-    console.error('got an error logging in with token');
-    throw(error);
-  });
-}
-
-
-/**
  * Calls the ThoughtSpot logout service.
  * @param tsurl The URL for the ThoughtSpot cluster.
  * @returns {Promise<void>} The call to complete the logout.  Can usually be ignored.

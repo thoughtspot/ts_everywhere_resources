@@ -18,10 +18,10 @@ let columnName = '';
 let values = [''];
 ~~~
 
-Next, create a LiveboardEmbed that uses these variables:
+Next, create a PinboardEmbed that uses these variables:
 
 ~~~
-const embed = new LiveboardEmbed("#embed", {
+const embed = new PinboardEmbed("#embed", {
   frameParams: {},
    pinboardId: "b22eabd5-6fa5-4342-847e-ca2abd5d54cc",
    runtimeFilters: [{
