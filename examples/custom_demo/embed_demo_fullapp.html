@@ -178,8 +178,7 @@
 
 <!-- Put the ThoughtSpot EmbedSDK script down here so it runs after the page loads fully -->
 <script type='module'>
-    let tsHost = "https://{}.thoughtspot.cloud"; // No trailing slash
-
+    let tsHost = "https://{}.thoughtspot.cloud";
 // Import ThoughtSpot SDK
 import {
   init,
@@ -485,29 +484,10 @@ embed
             // On a Liveboard, must determine the viz_id of the component triggering the Custom Action
             let vizId;
             
-            
-            actionData = customActionData.embedAnswerData; // Inner object with all the real details returned
-            // User information (if you don't have otherwise)
-            user = actionData.user;
-            // Additional user properties to parse out
-            // tsUsername = user.userName;
-            // tsUserGuid = user.userGUID;
-            // tsUserEmail = user.userEmail;
-            // This is actual vizId that shows up in TML and metadata APIs for given viz
-            if (actionData.vizId){
-                vizId = actionData.vizId;
-            }
-            else{
-                vizId = customActionData.vizId;
-            }
-            console.log('actionData is', actionData);
-            console.log('vizId is: ' + vizId);
-
             // Context Menu Custom Actions happen on a single point
             if(isContextMenu == true){
                 // This may change a bit with updates to provide more metadata
                 let points = customActionData.contextMenuPoints;
-                actionData = customActionData.embedAnswerData;
                 console.log("Custom Action from Context Menu on this set of points", points);
 
                 // There are two objects inside, clickedPoint and selectedPoints. They both appear to be the same, selectedPoints is array of length 1
@@ -527,15 +507,23 @@ embed
             }
             // Regular Menu Custom Action. Currently has more metadata than Context Menu (but should change, more can move to top for both)
             else {
+                actionData = customActionData.embedAnswerData; // Inner object with all the real details returned
+                // User information (if you don't have otherwise)
+                user = actionData.user;
+                // Additional user properties to parse out
+                // tsUsername = user.userName;
+                // tsUserGuid = user.userGUID;
+                // tsUserEmail = user.userEmail;
                 
+                // This is actual vizId that shows up in TML and metadata APIs for given viz
+                vizId = actionData.vizId;
+
                 // Liveboard filter information (will parse further). Array of objects
                 let filters = actionData.filterGroups;
                 // console.log(filters);
                 
                 // We'll grab out the essentials necessary to convert the filter into TML Search Query language
-                if(filters != null){
-                    liveboardFiltersToConvert = parseLiveboardFiltersForFilters(filters);
-                }
+                liveboardFiltersToConvert = parseLiveboardFiltersForFilters(filters);
             }
 
             // Viz column metadata (array of column objects)
@@ -550,7 +538,7 @@ embed
             // Display a modal dialog box
             modal.style.display = "block";
             console.log("About to build the Viz TML from the parts:");
-            buildCurrentVizOnLiveboardTML(tsAppState.objectId, vizId, liveboardFiltersToConvert, [], selectionFiltersToConvert).then( vizTmlSearchString => { 
+            buildCurrentVizOnLiveboardTML(tsAppState.objectId, vizId, liveboardFiltersToConvert, [], null).then( vizTmlSearchString => { 
                 console.log("Final vizTmlSearchString to be used with Search Data API: ", vizTmlSearchString);
                 modal.style.display = "block";
                 callSearchDataApi(vizTmlSearchString, tsAppState.currentDatasources[0]);
@@ -611,8 +599,6 @@ function parseSelectedPointsForFilters(points){
     let objectsToParse = [selectedAttributes, deselectedAttributes]; // possibly add in Measures later?
     // console.log(objectsToParse);
     // Run through each of the selection objects in the list
-
-    let selectionFiltersToConvert = [];
     for (let k = 0, l = objectsToParse.length; k<l; k++){
         let o = objectsToParse[k];
         // Each column of attributes/measures will be an object with a number of data and metadata properties
@@ -870,10 +856,8 @@ function buildCurrentVizOnLiveboardTML(liveboardId, vizId, lbFilters, runtimeFil
             let vizes = tmlObject.liveboard.visualizations;
             let selectedViz;
             // 2. Find the answer object within the Liveboard TML with the matching viz_id property to the passed in vizId 
-            console.log('Looking for '+ vizId);
             for(let i = 0, len = vizes.length; i<len; i++){
-                console.log(vizes[i]);
-                
+                // console.log(vizes[i]);
                 if (vizes[i].viz_guid == vizId){
                     // console.log("Found match for ", vizId);
                     selectedViz = vizes[i];
@@ -897,7 +881,6 @@ function buildCurrentVizOnLiveboardTML(liveboardId, vizId, lbFilters, runtimeFil
             
             let finalFilters = [];
             console.log('lbFilters right now: ', lbFilters);
-            console.log("selectionDetails right now", selectionDetails);
             if (lbFilters !== null && lbFilters.length > 0){
                 // Selection details may be more specific than a LB filter, not less
                 console.log("selectionDetails right now", selectionDetails);
@@ -926,10 +909,8 @@ function buildCurrentVizOnLiveboardTML(liveboardId, vizId, lbFilters, runtimeFil
                 }
 
             }
-
-            if (selectionDetails.length > 0 && lbFilters.length == 0){
+            if (selectionDetails != null && lbFilters == null){
                 // Add in the SelectionDetails as filters
-                console.log('Adding selection Details to the filters');
                 for(let k = 0, l = selectionDetails.length; k<l; k++){
                     finalFilters.push(selectionDetails[k]);
                 }
@@ -949,11 +930,6 @@ function buildCurrentVizOnLiveboardTML(liveboardId, vizId, lbFilters, runtimeFil
             }
             
             console.log("Final vizTmlSearchString with filter clauses added: ", vizTmlSearchString);
-            // Add the field to 
-            let additionalFieldNameToAdd = ''; // Formatted as  [{field name}]
-            if (additionalFieldNameToAdd != ''){
-                vizTmlSearchString += " " + additionalFieldNameToAdd;
-            }
             return vizTmlSearchString;
         });
 

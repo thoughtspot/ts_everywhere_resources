@@ -6,45 +6,43 @@
 <head>
     <meta charset='UTF-8'/>
     <title>TS Everywhere Tutorial</title>
-    <link rel='icon' href='images/TS.png'/>
-    <link rel='stylesheet' href='tse.css'/>
-    <link rel='stylesheet' href='custom-actions.css'/>
+    <link rel='icon' href='images/TS.png' />
+    <link rel='stylesheet' href='tse.css' />
+    <link rel='stylesheet' href='custom-actions.css' />
 </head>
 <body>
-<div id="header">
-    <span class='use-case-name'>&nbsp;Retail Analytics</span>
-</div>
-<!-- Initial landing page for connecting. -->
-<div id='login' class='visible'>
-    <form id='login-form'>
-        <span id='ts-url'></span>
-        <br/>
-        <br/>
-        <button id='login-button' type='button'>Connect</button>
-    </form>
-</div>
-
-<!-- Modal for showing details of a selected point -->
-<div id="show-data" class="modal">
-    <div class="modal-content">
-        <span id="close-modal" class="close">&times;</span>
-        <div id="show-details"></div>
+    <div id="header">
+        <span class='use-case-name'>&nbsp;Retail Analytics</span>
     </div>
-</div>
-
-<!-- Main application -->
-<div id="main-app" class="hidden">
-    <div id='navbar' class='sidenav'>
-        <a id='search-link'>Search</a>
-        <a id='liveboard-link'>Liveboard</a>
-        <a id='visualization-link'>Visualization</a>
-        <a id='full-application-link'>Full Application</a>
-        <a id='custom-action-link'>Custom Action</a>
+    <div id='login' class='visible'>
+        <form id='login-form'>
+            <span id='ts-url'></span>
+            <br/>
+            <br/>
+            <!-- The following can be used if you want to use AuthType.Basic
+            <label for='username'>Username: </label>
+            <input type='text' id='username' />
+            <br/>
+            <label for='password'>Password: </label>
+            <input type='password' id='password' />
+            <br/>
+            <button id='login-button' type='button'>Login</button>
+            -->
+            <button id='login-button' type='button'>Connect</button>
+        </form>
     </div>
-    <div id='embed'>
-        <p class="instructions">&#8592;&nbsp;Choose and option from the side panel.</p>
+    <div id="main-app" class="hidden">
+        <div id='navbar' class='sidenav'>
+            <a id='search-link'>Search</a>
+            <a id='liveboard-link'>Liveboard</a>
+            <a id='visualization-link'>Visualization</a>
+            <a id='full-application-link'>Full Application</a>
+            <a id='custom-action-link'>Custom Action</a>
+        </div>
+        <div id='embed'>
+            <p class="instructions">&#8592;&nbsp;Choose and option from the side panel.</p>
+        </div>
     </div>
-</div>
-<script src='tse.js' type='module'></script>
+    <script src='tse.js' type='module'></script>
 </body>
 </html>
