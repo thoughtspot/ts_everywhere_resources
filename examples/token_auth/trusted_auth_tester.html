@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<!--
+  Single page demo app with configurable sidebar using menuItems JSON object
+-->
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'/>
+    <title>ThoughtSpot Trusted Authentication Tester</title>
+
+    <link rel="preconnect" href="https://fonts.gstatic.com"> 
+    <link href="https://fonts.googleapis.com/css2?family=Material+Icons&family=Monoton&family=Bungee+Outline&family=Roboto:wght@400;500;700&family=Faster+One&family=Plaster&display=swap" rel="stylesheet">
+    <style>
+        /* Simple styling of basic page */
+        body {
+            background-color: rgb(255, 255, 255);
+            font-family: sans-serif;
+        }
+
+        div {
+            /* border: 1px dashed black; */
+            /* margin: 4px; */
+            padding: 10px;
+            margin: 0px;
+        }
+
+        #embed {
+            height: 800px;
+            min-width: 600px;
+        }
+
+        #embed-2 {
+            height: 800px;
+            min-width: 600px;
+        }
+
+        #header {
+            background-color: black;
+            color: white;
+        }
+
+        #sidebar {
+            /* border-right: solid 1px black; */
+            flex: 0 0 400px;
+        }
+
+        #main-content-div {
+            background-color: rgb(238, 241, 244);   
+        }
+
+        #no-data {
+            display: none;
+        }
+
+        ul {
+            margin-left: 5px;
+            padding-left: 0px;
+        }
+
+        li {
+            list-style-type: none;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            margin-bottom: 3px;
+            font-size: 18px;
+            font-weight: 500;
+            font-family: 'Roboto', sans-serif;
+            color: #444444;
+            line-height: 1.429;
+            cursor: pointer;
+            padding-left: 10px;
+            
+        }
+        li:hover{
+            background-color: rgb(238, 238, 238);
+        }
+    </style>
+    <style>
+        /* Defines the Modal pop-up look and feel for use with Custom Action */
+
+        /* https://www.w3schools.com/howto/howto_css_modals.asp */
+        /* The Modal (background) */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 4; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            min-height: 600px;
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        /* Modal Content/Box */
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 60%; /* Could be more or less, depending on screen size */
+        }
+
+        /* The Close Button */
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top header bar.  Feel free to add logo or other elements -->
+    <div id='header'>
+        <h1>ThoughtSpot Trusted Authentication Test Page</h1>
+    </div>
+    <!-- Main page is flex container split into 'sidebar' menu and 'main-content-div' where ThoughtSpot content embeds -->
+    <div id='page-content-div' style='display: flex;'>
+        <div id='sidebar'>
+            <!-- Home item just to look like a real system, feel free to add others below-->
+            <h3>Enter Details Here</h3>
+            <hr/>
+            <p>ThoughtSpot URL:
+                <input id="url-input"></input>
+            <p>Liveboard GUID
+                <input id="liveboard-input"></input>
+            <p>Username:
+                <input id="username-input"></input>
+            <p>Token:
+                <input id="token-input"></input>  
+            <p></p>
+            <button id='test-button' class='menu-button' style="display: inline;">Load Liveboard</button> <!-- Change to display: none; to hide -->
+            
+            <!-- Analytics menu gets populated based on the menuItems object above-->
+            <h3>Instructions</h3>
+            <hr/>
+            <p>The input boxes above take in the necessary values to perform a Trusted Authentication flow in ThoughtSpot. Make sure your CORS and CSP settings are configured in ThoughtSpot to allow the server and port you host this page on.</p>
+            <p>The "Liveboard GUID" can be found in the URL of any Liveboard (it is the value after '/pinboard/' in the URL)</p>
+            <p>The Token value should be generated from your Authenticator Service using the using the <a href='https://developers.thoughtspot.com/docs/?pageid=session-api#session-authToken' target="_blank">/session/auth/token</a> API endpoint. This can be as simple as the built in Swagger portal at "/external/swagger" or a simple Python request to generate the token.</p>
+            <p>The username field must match EXACTLY with the username value used to generate the token</p>
+            <p>Once you have this working, you will update the <b>authTokenCallback</b> function to make the request to the completed Authenticator Service on demand. You also must set the <b>username</b> in the <b>init</b> function dynamically.
+
+        </div>
+        <div id='main-content-div' style='flex: 3 3 0;'>
+            <!--<div id="loader">Loader Image Would Go Here</div>
+            <div id="no-data"></div>-->
+            <!-- Description is rendered here and set to display:block if it exists -->
+            <div id='description' style='display:none'></div>
+            <!-- Embed component goes here -->
+            <div id='embed'></div>
+        </div>
+</div>
+
+<!-- from https://www.w3schools.com/howto/howto_css_modals.asp -->
+<!-- The Modal -->
+<div id="myModal" class="modal">
+
+    <!-- Modal content, pop-up on a custom action. Doesn't actually DO anything when the buttons are pressed -->
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <!-- Header of the modal, change to what feels appropriate -->
+      <h3>Create a New Item</h3>
+      <p>Summary <input type='text' id='summary-field' style="width: 400px;"></p>
+      <p>Description</p>
+      <textarea style="height: 100px; width: 450px;"></textarea>
+      <p><button onclick='document.getElementById("myModal").style.display="none";'>Cancel</button> <button onclick='document.getElementById("myModal").style.display="none";'>Create</button></p>
+    </div>
+  
+</div>
+
+<script>
+    /*
+    * Modal window operations
+    */
+    // Get the modal
+    var modal = document.getElementById("myModal");
+
+    // Get the button that opens the modal
+    var btn = document.getElementById("myBtn");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    // When the user clicks on the button, open the modal
+    //btn.onclick = function() {
+    //modal.style.display = "block";
+    //}
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
+
+</script>
+
+<!-- Put the ThoughtSpot EmbedSDK script down here so it runs after the page loads fully -->
+<!-- Of note, because this uses the module form of the SDK, all code relating to TS must be in this block, 
+     as the imported functions are not accessible from any other script tag
+-->
+<script type='module'>
+    // Import ThoughtSpot SDK
+    import {
+        init,
+        PinboardEmbed,
+        LiveboardEmbed,
+        SearchEmbed,
+        Action,
+        RuntimeFilterOp,
+        EmbedEvent,
+        HostEvent,
+        AuthType
+    } from 'https://cdn.jsdelivr.net/npm/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js'; // Copied in from GitHub
+
+    // In this tester, the promise simply returns the token entered into the 
+    function authTokenCallback(){
+        let thoughtspotAuthToken = document.getElementById('token-input').value;
+        return Promise.resolve(thoughtspotAuthToken);
+    }
+    
+    function initThoughtspot(){
+        // Initialize embed configuration
+        init(
+        {
+            thoughtSpotHost: document.getElementById('url-input').value,
+            authType: AuthType.AuthServer,
+            username: document.getElementById('username-input').value,
+            getAuthToken: authTokenCallback 
+        });
+    }
+
+    const embedDiv = '#embed';
+    let embed;  // Global scoped variable for the current embedded object
+
+    function makeLiveboard(guid){
+        // Instantiate class for embedding a pinboard
+        embed = new LiveboardEmbed(embedDiv, {
+            frameParams: {},
+            /*param-start-modifyActions*/
+            disabledActions: [],
+            disabledActionReason: "Reason for disabling",
+            hiddenActions: [],
+            /*param-end-modifyActions*/
+            pinboardId: guid,
+            /*runtimeFilters: [ {
+                columnName: 'Country', // eg: color
+                operator: RuntimeFilterOp.EQ,
+                values: ['Taiwan'] // eg: red
+                }
+            ]
+            /*param-start-runtimeFilters*//*param-end-runtimeFilters*/
+        });
+
+        //hideNoDataImage(); 
+
+        embed
+            // Register event listeners
+            //.on(EmbedEvent.Init, showLoader)
+            //.on(EmbedEvent.Load, hideLoader)
+            /*param-start-customActionHandle*//*param-end-customActionHandle*/
+            .on(EmbedEvent.Error, () => {
+                //showNoDataImage();
+                //hideLoader();
+            })
+            .on(EmbedEvent.CustomAction, (response) => {
+                console.log('CustomAction event fires');
+                console.log(response);
+                const data = response.data;
+                if (response.id === 'create-jira'){
+                    let dataObj = JSON.parse(data);
+                    console.log(dataObj);
+                    let point = dataObj.selectedPoints[0];
+                    let val1 = point.selectedAttributes[0].value;
+                    let val2 = point.selectedMeasures[0].value;
+
+                    let summaryText = val1 + " - " + val2;
+                    document.getElementById('summary-field').value = summaryText;
+                    // Display the modal box
+                    modal.style.display = "block";
+                    //return modal;
+                }
+            } )
+            // Render pinboard
+            .render();
+        }
+    
+    function makeVisualization(guid, vizGuid){
+        // Instantiate class for embedding a pinboard
+        let embed = new PinboardEmbed(embedDiv, {
+            frameParams: {},
+            /*param-start-modifyActions*/
+            disabledActions: [],
+            disabledActionReason: "Reason for disabling",
+            hiddenActions: [],
+            /*param-end-modifyActions*/
+            pinboardId: guid,
+            vizId: vizGuid
+            /*param-start-runtimeFilters*//*param-end-runtimeFilters*/
+        });
+
+        //hideNoDataImage(); 
+
+        embed
+            // Register event listeners
+            //.on(EmbedEvent.Init, showLoader)
+            //.on(EmbedEvent.Load, hideLoader)
+            /*param-start-customActionHandle*//*param-end-customActionHandle*/
+            .on(EmbedEvent.Error, () => {
+                //showNoDataImage();
+                //hideLoader();
+            })
+            .on(EmbedEvent.CustomAction, (response) => {
+                console.log('CustomAction event fires');
+                console.log(response);
+                const data = response.data;
+                if (response.id === 'create-jira'){
+                    let dataObj = JSON.parse(data);
+                    console.log(dataObj);
+                    let point = dataObj.selectedPoints[0];
+                    let val1 = point.selectedAttributes[0].value;
+                    let val2 = point.selectedMeasures[0].value;
+
+                    let summaryText = val1 + " - " + val2;
+                    document.getElementById('summary-field').value = summaryText;
+                    // Display the modal box
+                    modal.style.display = "block";
+                    //return modal;
+                }
+            } )
+            // Render pinboard
+            .render();
+        }
+    
+    function makeSearch(datasourceGuid, searchString){
+        // Instantiate class for embedding a pinboard
+        let embed = new SearchEmbed(embedDiv, {
+            frameParams: {},
+            /*param-start-modifyActions*/
+            disabledActions: [],
+            disabledActionReason: "Reason for disabling",
+            hiddenActions: [],
+            /*param-end-modifyActions*/
+            dataSources: [datasourceGuid],
+            searchOptions: {
+                searchTokenString: searchString, //write a TML query
+                //[commit date][revenue]
+                executeSearch: true,
+            },
+            /*param-start-runtimeFilters*//*param-end-runtimeFilters*/
+        });
+
+        //hideNoDataImage(); 
+
+        embed
+            // Register event listeners
+            //.on(EmbedEvent.Init, showLoader)
+            //.on(EmbedEvent.Load, hideLoader)
+            /*param-start-customActionHandle*//*param-end-customActionHandle*/
+            .on(EmbedEvent.Error, () => {
+                //showNoDataImage();
+                //hideLoader();
+            })
+            .on(EmbedEvent.CustomAction, (response) => {
+                console.log('CustomAction event fires');
+                console.log(response);
+                const data = response.data;
+                if (response.id === 'create-jira'){
+                    let dataObj = JSON.parse(data);
+                    console.log(dataObj);
+                    let point = dataObj.selectedPoints[0];
+                    let val1 = point.selectedAttributes[0].value;
+                    let val2 = point.selectedMeasures[0].value;
+
+                    let summaryText = val1 + " - " + val2;
+                    document.getElementById('summary-field').value = summaryText;
+                    // Display the modal box
+                    modal.style.display = "block";
+                    //return modal;
+                }
+            } )
+            // Render pinboard
+            .render();
+        }
+
+    function makeAnswer(answerGuid){
+        // Instantiate class for embedding a pinboard
+        let embed = new SearchEmbed(embedDiv, {
+            frameParams: {},
+            /*param-start-modifyActions*/
+            disabledActions: [],
+            disabledActionReason: "Reason for disabling",
+            hiddenActions: [],
+            /*param-end-modifyActions*/
+            answerId: answerGuid
+            /*param-start-runtimeFilters*//*param-end-runtimeFilters*/
+        });
+
+        //hideNoDataImage(); 
+
+        embed
+            // Register event listeners
+            //.on(EmbedEvent.Init, showLoader)
+            //.on(EmbedEvent.Load, hideLoader)
+            /*param-start-customActionHandle*//*param-end-customActionHandle*/
+            .on(EmbedEvent.Error, () => {
+                //showNoDataImage();
+                //hideLoader();
+            })
+            .on(EmbedEvent.CustomAction, (response) => {
+                console.log('CustomAction event fires');
+                console.log(response);
+                const data = response.data;
+                if (response.id === 'create-jira'){
+                    let dataObj = JSON.parse(data);
+                    console.log(dataObj);
+                    let point = dataObj.selectedPoints[0];
+                    let val1 = point.selectedAttributes[0].value;
+                    let val2 = point.selectedMeasures[0].value;
+
+                    let summaryText = val1 + " - " + val2;
+                    document.getElementById('summary-field').value = summaryText;
+                    // Display the modal box
+                    modal.style.display = "block";
+                    //return modal;
+                }
+            } )
+            // Render pinboard
+            .render();
+        }
+   
+
+    // Functions to show and hide a loader while iframe loads
+    function showLoader() {
+        document.getElementById("loader").style.display = "block";
+    }
+
+    function hideLoader() {
+        document.getElementById("loader").style.display = "none";
+    }
+
+    // Functions to show or hide No data images
+
+    function showNoDataImage() {
+        document.getElementById("no-data").style.display = "block";
+    }
+    function hideNoDataImage() {
+        document.getElementById("no-data").style.display = "none";
+    }
+
+    // Clears the embedded section when new menu item is selected
+    const clearEmbed = () => {
+        const div = document.getElementById("embed");
+        div.innerHTML = "";
+    }
+
+    function writeDescription(description) {
+        let descDiv = document.getElementById("description");
+        descDiv.style.display = "block";
+        descDiv.style.fontSize = '18pt';
+        descDiv.innerHTML = '';
+        descDiv.innerText = description;
+
+    }
+
+   /* Router function to read the content type and map to appropriate build function */
+   function loadContent(contentObj){
+        console.log('Running load content');
+        console.log(contentObj);
+        clearEmbed();
+        if(contentObj.description !== null){
+            writeDescription(contentObj.description);
+        }
+        else {
+            document.getElementById("description").style.display = "none";
+        }
+        if(contentObj.type == 'liveboard'){
+            makeLiveboard(contentObj.guid);
+        }
+        if(contentObj.type == 'visualization'){
+            makeVisualization(contentObj.guid, contentObj.vizGuid);
+        }
+        if(contentObj.type == 'search'){
+            makeSearch(contentObj.guid);
+        }
+        if(contentObj.type == 'answer'){
+            makeAnswer(contentObj.guid);
+        }
+   }
+
+
+   document.getElementById('test-button').onclick = function (){
+        initThoughtspot();
+        makeLiveboard(document.getElementById('liveboard-input').value)
+   };
+
+</script>
+
+</body>

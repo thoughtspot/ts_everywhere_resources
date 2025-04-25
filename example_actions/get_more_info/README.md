@@ -6,13 +6,13 @@ This example shows the how to get more info when an action is triggered.  In thi
 
 For this example, you'll need custom action to send email.  The action is labeled as "Send Email" with an ID of 'send-email'.
 
-![customer action settings](custom_action.png)
+![customer action settings](images/custom_action.png)
 
 In this case we aren't setting this as a global action so that we can control where it gets displayed.  
 
 Next, set the custom action to be associated with the worksheet as the main menu item.  This setting will cause the action to show on any answer (including search) that uses this worksheet.  By setting it at the worksheet level, we know our calls to get additional information will work.  
 
-![worksheet action setup](worksheet_action_configuration.png)
+![worksheet action setup](images/worksheet_action_configuration.png)
 
 ## Create content
 
@@ -25,7 +25,7 @@ This example uses the following data format in a worksheet.
 This example uses Search, so no additional content is required. This example will
 use a search like the following, but any search can work as long as it has the customer names (due to the restriction in the code below).  Notice the (Send Email) button in the display.
 
-![example search](search.png)
+![example search](images/search.png)
 
 ## Solution
 
@@ -123,4 +123,4 @@ const showEmails = (emails) => {
 
 Assuming all goes well, you will get something similar to the following:
 
-![Email example](emails.png)
+![Email example](images/emails.png)

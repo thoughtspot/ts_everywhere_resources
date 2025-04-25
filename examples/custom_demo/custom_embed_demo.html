@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<!--
+  Single page demo app with configurable sidebar using menuItems JSON object.
+  No SSO implemented - you must sign into the ThoughtSpot instance first in another tab as the 
+  user you want to be logged in as. Alternatively, hard-code a username and password using AuthType.Basic
+  down in the init() function.
+-->
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'/>
+    <title>ThoughtSpot Embed Test</title>
+
+    <script>
+        // ThoughtSpot Server
+        let tsHost = "https://{}.thoughtspot.cloud";
+        // Default pinboard ID for what loads initially (could also pick the first element from menuItems if you know it is Liveboard)
+        let defaultLiveboardId = "{}";
+        
+        let runtimeFilterUiFlag = true;  // Turn on the drop-down menu for runtime filter, configured below
+        let topMenuFlag = false;  // Switch from side menu to top menu
+        /* 
+        * Define the items you want in the Analytics menu here.
+        * 'name' property is the visible menu item text
+        * Available types: ['liveboard', 'visualization', 'answer', 'search']
+        * vizGuid is only used for 'visualization' type, leave null othewise
+        * guid for 'search' is a data source (worksheet)
+        * description will not display if set to null
+        */
+       var menuItems = [
+           {    
+                'name': 'Overview Dashboard', 
+                'type': 'liveboard', 
+                'guid': '{}', 
+                'vizGuid': null, 
+                'description': null
+            },
+           {
+                'name': 'Step 1', 
+                'type': 'visualization', 
+                'guid': '{}', 
+                'vizGuid': '{}', 
+                'description': 'Start with looking for outliers in amount of rejection. Once you have a feel for the date ranges, move on to Step 2 in the navigation menu.'
+            },
+           {
+                'name': 'Step 2', 
+                'type': 'visualization', 
+                'guid': '{}', 
+                'vizGuid': '{}', 
+                'description': 'Are there any particular suppliers that stand out as a possible cause of the issue over the time frame? If so, move on to Step 3.'
+            },
+           {
+                'name': 'Step 3', 
+                'type': 'answer', 
+                'guid': '{}', 
+                'vizGuid': null, 
+                'description': null
+            },
+
+           {
+                'name': 'Self Service', 
+                'type': 'search', 
+                'guid': '{}', 
+                'vizGuid': null, 
+                'description': null
+            }
+       ];
+        
+       /*
+       * Runtime Filters UI (disabled by default), where you can specify field and drop-down values to apply
+       */
+
+       // Field in Liveboared data source to apply dropdown runtime filter on 
+       var dropdownFilterFieldName = 'Country';
+       // Values to fill out the dropdown filter
+       // First in the pair is the Value sent, the second is the Text Value in the dropdown menu
+       var dropdownFilterFieldValues = [
+            ["All", "All"], 
+            ["Canada", "Canada"],
+            ["China", "China"],
+            ["Hong Kong", "HK"],
+            ["Taiwan", "Taiwan"],
+            ["United States", "United States"]
+        ];
+      /*
+      * End of Runtime Filters select definition
+      */
+    </script>
+
+<!-- Fonts and icons from Google CDN -->
+<link rel="preconnect" href="https://fonts.gstatic.com"> 
+<link href="https://fonts.googleapis.com/css2?family=Material+Icons&family=Monoton&family=Bungee+Outline&family=Roboto:wght@400;500;700&family=Faster+One&family=Plaster&display=swap" rel="stylesheet">
+
+<!-- Styles for the page (no linked stylesheet, all defined here) -->
+<style>
+    /* Simple styling of basic page */
+    body {
+        background-color: rgb(255, 255, 255);
+        font-family: sans-serif;
+    }
+
+    div {
+        /* border: 1px dashed black; */
+        /* margin: 4px; */
+        padding: 10px;
+        margin: 0px;
+    }
+
+    #embed {
+        height: 800px;
+        min-width: 600px;
+    }
+
+    #embed-2 {
+        height: 800px;
+        min-width: 600px;
+    }
+
+    #coverup {
+        height: 800px;
+        min-width: 600px;
+        width: 100%;
+        z-index: 10;
+        position: fixed;
+        background-color: rgb(238, 241, 244);   
+    }
+
+    /* Top Bar  */
+    #header {
+        background-color: black;
+        color: white;
+    }
+
+    /* Optional top-menu below the header  */
+    #top-menu {
+        background-color: black;
+        color: white;
+        display: none;
+    }
+
+
+
+    #main-content-div {
+        background-color: rgb(238, 241, 244);   
+        left: 0;
+        top: 0;
+    }
+
+    #no-data {
+        display: none;
+    }
+
+    /* Left Side Menu */
+    #sidebar {
+        /* border-right: solid 1px black; */
+        flex: 0 0 250px;
+        display: none;
+    }
+    /* Entries in the Left Side Menu */
+    ul {
+        margin-left: 5px;
+        padding-left: 0px;
+    }
+
+    li {
+        list-style-type: none;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        margin-bottom: 3px;
+        font-size: 18px;
+        font-weight: 500;
+        font-family: 'Roboto', sans-serif;
+        color: #444444;
+        line-height: 1.429;
+        cursor: pointer;
+        padding-left: 10px;
+        
+    }
+    li:hover{
+        background-color: rgb(238, 238, 238);
+    }
+    </style>
+    <style>
+        /* Defines the Modal pop-up look and feel for use with Custom Action */
+
+        /* https://www.w3schools.com/howto/howto_css_modals.asp */
+        /* The Modal (background) */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 4; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            min-height: 600px;
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        /* Modal Content/Box */
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 60%; /* Could be more or less, depending on screen size */
+        }
+
+        /* The Close Button */
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top header bar.  Feel free to add logo or other elements -->
+    <div id='header'>
+        <!-- Add logo here if desired -->
+        <!-- <img src='yourlogo.png'> -->
+
+        <!-- Header / organization name. Remove if using logo that is the name-->
+        <h1>App Analytics</h1>
+    </div>
+    <!-- Optional Top Menu, below the header -->
+    
+    <div id="top-menu">
+        <span><h3>Home</h3></span>
+        <span></span>
+    </div> 
+    
+
+    <!-- Main page is flex container split into 'sidebar' menu and 'main-content-div' where ThoughtSpot content embeds -->
+    <div id='page-content-div' style='display: flex;'>
+        <div id='sidebar'>
+            <!-- Home item just to look like a real system, feel free to add others below-->
+            <h3>Home</h3>
+            <hr/>
+            <!-- Analytics menu gets populated based on the menuItems object above-->
+            <h3>Analytics</h3>
+            <ul id='menu-2'>
+            </ul>
+            <!-- Bonus section to add some buttons or other elements below the menu to show off other features -->
+            
+                <hr/>
+            
+        </div>
+        <div id='main-content-div' style='flex: 3 3 0;'>
+            <!-- Runtime filters dropdown menu -->
+            <div id='runtime-filters-div' style="display: none;">
+                <select id="runtime-filters-select" style="display: inline; font-size: 1.1em;"> 
+                <!--   <option value="All">All</option>
+                    <option value="Canada">Canada</option>
+                    <option value="China">China</option>
+                    <option value="Hong Kong">Hong Kong</option>
+                    <option value="Taiwan">Taiwan</option>
+                    <option value="United States">United States</option> -->
+                </select>
+                <button id='runtime-filters-button' class='menu-button' style="display: inline; font-size: 1.1em;">Apply Filter</button> 
+            </div>
+            <!-- End of Runtime Filters section -->
+
+            <!--<div id="loader">Loader Image Would Go Here</div>
+            <div id="no-data"></div>-->
+
+            <!-- Description is rendered here and set to display:block if it exists -->
+            <div id='description' style='display:none'></div>
+            
+            <!-- Cover up of embed div for loading or error conditon -->
+            <div id="coverup" style='display:none'>
+                <p>Analytics is loading...</p>
+            </div>
+
+            <!-- Embed component goes here -->
+            <div id='embed'></div>
+        </div>
+</div>
+
+<!-- from https://www.w3schools.com/howto/howto_css_modals.asp -->
+<!-- The Modal -->
+<div id="myModal" class="modal">
+
+    <!-- Modal content, pop-up on a custom action. Doesn't actually DO anything when the buttons are pressed -->
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <!-- Header of the modal, change to what feels appropriate -->
+      <h3>Create a New Item</h3>
+      <p>Summary <input type='text' id='summary-field' style="width: 400px;"></p>
+      <p>Description</p>
+      <textarea style="height: 100px; width: 450px;"></textarea>
+      <p><button onclick='document.getElementById("myModal").style.display="none";'>Cancel</button> <button onclick='document.getElementById("myModal").style.display="none";'>Create</button></p>
+    </div>
+  
+</div>
+
+<script>
+    /*
+    * Menu visibility
+    */
+   if (topMenuFlag === true){
+        document.getElementById('top-menu').style.display = 'block';
+   }
+   else {
+        document.getElementById('sidebar').style.display = 'block';
+   }
+
+   if (runtimeFilterUiFlag === true){
+        document.getElementById('runtime-filters-div').style.display = 'block';
+   }
+
+    /*
+    * Modal window operations
+    */
+    // Get the modal
+    var modal = document.getElementById("myModal");
+
+    // Get the button that opens the modal
+    var btn = document.getElementById("myBtn");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    // When the user clicks on the button, open the modal
+    //btn.onclick = function() {
+    //modal.style.display = "block";
+    //}
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
+
+    /*
+    * Fill in the dropdown for the runtime filter
+    */
+
+   var filterDropdown = document.getElementById('runtime-filters-select');
+   for (let i = 0, len = dropdownFilterFieldValues.length; i<len; i++){
+       let o = document.createElement('option');
+       o.value = dropdownFilterFieldValues[i][0];
+       o.text = dropdownFilterFieldValues[i][1];
+       filterDropdown.append(o);
+   }
+</script>
+
+<!-- Put the ThoughtSpot EmbedSDK script down here so it runs after the page loads fully -->
+<!-- Of note, because this uses the module form of the SDK, all code relating to TS must be in this block, 
+     as the imported functions are not accessible from any other script tag
+-->
+<script type='module'>
+    // Import ThoughtSpot SDK
+    import {
+        init,
+        PinboardEmbed,
+        LiveboardEmbed,
+        SearchEmbed,
+        Action,
+        RuntimeFilterOp,
+        EmbedEvent,
+        HostEvent,
+        AuthType,
+        prefetch
+    } from 'https://cdn.jsdelivr.net/npm/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js'; // Copied in from GitHub
+
+    // Initialize embed configuration
+    init(
+    {
+        thoughtSpotHost: tsHost,
+        authType: AuthType.None,
+        callPrefetch: true  // caches the Embed SDK JavaScript prior to first load 
+        
+    });
+
+    const embedDiv = '#embed';
+    let embed;  // Global scoped variable for the current embedded object
+
+    /*
+    * Runtime Filters 
+    */
+    var runtimeFilterArray = [];
+
+
+    function createRuntimeFiltersEQ(columnName, value){
+        let filter1 = {
+            columnName: columnName, // eg: color
+            operator: RuntimeFilterOp.EQ,
+            values: [value] // eg: red
+        }; 
+        //runtimeFilterArray = [filter1];
+        return filter1
+        
+    }
+    
+    function createRuntimeFiltersIN(columnName, values){
+        let filter1 = {
+            columnName: columnName, // eg: color
+            operator: RuntimeFilterOp.IN,
+            values: values // eg: red
+        }; 
+        //runtimeFilterArray = [filter1];
+        return filter1;
+        
+    }
+
+    function runtimeFilterTest(){
+        console.log('Updating the RT filter');
+        console.log(embed);
+        let selectMenu = document.getElementById('runtime-filters-select');
+        let selectValue = selectMenu.value;
+        let filters = []
+        if (selectValue === 'All'){
+            filters.push(createRuntimeFiltersEQ(dropdownFilterFieldName, []));
+        }
+        else{
+            filters.push(createRuntimeFiltersEQ(dropdownFilterFieldName, selectValue));
+        }
+        console.log(filters);
+        // embed.trigger(HostEvent.SetVisibleVizs, ['29c9fae3-7de7-4ada-b96a-ef40ce29eaa4']);
+        let eventResponse = embed.trigger(HostEvent.UpdateRuntimeFilters, filters);
+        //embed.trigger(HostEvent.UpdateRuntimeFilters, filters);
+        
+        console.log(eventResponse);
+        console.log('Updating the RT filter event has been triggered');
+        eventResponse.then(
+            function (resp){
+                console.log("Response from UpdateRuntimeFilters promise:");
+                console.log(resp);
+              }, 
+            function(err){
+                console.log("Error from UpdateRuntimeFilters promise:");
+                console.log(err);
+             }
+        );
+    }
+    
+    document.getElementById('runtime-filters-button').onclick = runtimeFilterTest;
+
+    /*
+    * End of Runtime Filters
+    */
+
+    /*
+    * Start of functions to create Embed components
+    */
+
+    function makeLiveboard(guid){
+        // Instantiate class for embedding a pinboard
+        embed = new LiveboardEmbed(embedDiv, {
+            frameParams: {},
+            /*param-start-modifyActions*/
+            disabledActions: [],
+            disabledActionReason: "Reason for disabling",
+            hiddenActions: [],
+            /*param-end-modifyActions*/
+            pinboardId: guid,
+            /*runtimeFilters: [ {
+                columnName: 'Country', // eg: color
+                operator: RuntimeFilterOp.EQ,
+                values: ['Taiwan'] // eg: red
+                }
+            ]
+            /*param-start-runtimeFilters*//*param-end-runtimeFilters*/
+        });
+
+        //hideNoDataImage(); 
+
+        embed
+            /*
+            * Register event listeners - https://developers.thoughtspot.com/docs/?pageid=events-app-integration
+            */
+            // Safari and some Chrome modes block 3rd party cookies. Let's you make a custom announcement
+            .on(EmbedEvent.NoCookieAccess, () => {
+                alert("Your browser has 3rd Party Cookie Access disabled.\nPlease enable to allow analytics and reload this page.\nIn Safari, you should disable 'Prevent Cross-Site Tracking' ");
+                document.getElementById('embed').innerHTML = "";
+                //let p = document.createElement('p');
+                //p.innerHTML = "<p>Your browser has 3rd Party Cookie Access disabled.<p>Please enable to allow analytics and reload this page.<p>In Safari, you should disable 'Prevent Cross-Site Tracking'";
+                document.getElementById('embed').innerHTML = "<p>Your browser has 3rd Party Cookie Access disabled.<p>Please enable to allow analytics and reload this page.<p>In Safari, you should disable 'Prevent Cross-Site Tracking'";
+                //document.getElementById('coverup').append(p);
+                document.getElementById('coverup').style.display = 'none';
+            })
+            // Fires when everything is ready and loaded
+            .on(EmbedEvent.LiveboardRendered, () => {
+                document.getElementById('coverup').style.display = 'none';
+            })
+            //.on(EmbedEvent.Init, showLoader)
+            //.on(EmbedEvent.Load, hideLoader)
+
+            // ThoughtSpot session can expire. Visual Embed SDK can go through login flow again automatically, 
+            // but you may want to adjust the page as this process happens
+            .on(EmbedEvent.AuthExpire, () => {
+                console.log('ThoughtSpot session has expired.');
+            })
+            // Any other error capture
+            .on(EmbedEvent.Error, () => {
+                document.getElementById('embed').innerHTML = "<p>An error has occured when loading analytics. <p>Please reload the page to try again, if the issue continues notify your administrator.";
+                //document.getElementById('coverup').append(p);
+                document.getElementById('coverup').style.display = 'none';
+            })
+            // Custom Actions appear in either main Viz menu or in right-click context menu
+            // Which custom actions appear in the menus is configured between Develop tab in ThoughtSpot
+            // and configurations on individual Liveboards using the Lightning Bolt menu on the right
+            .on(EmbedEvent.CustomAction, (response) => {
+                console.log('CustomAction event fires');
+                console.log(response);
+                const data = response.data;
+                if (response.id === 'create-jira'){
+                    let dataObj = JSON.parse(data);
+                    console.log(dataObj);
+                    let point = dataObj.clickedPoint;
+                    let val1 = point.selectedAttributes[0].value;
+                    let val2 = point.selectedMeasures[0].value;
+
+                    let summaryText = val1 + " - " + val2;
+                    document.getElementById('summary-field').value = summaryText;
+                    // Display the modal box
+                    modal.style.display = "block";
+                    //return modal;
+                }
+            } )
+            // VizPointClick fires off on any click, can be used instead of Custom Action in Context Menu
+            .on(EmbedEvent.VizPointClick, (response) => {
+                console.log('VizPointClick event fires');
+                console.log(response);
+            })
+            // VizPointClick fires off on a double-click 
+            .on(EmbedEvent.VizPointDoubleClick, (response) => {
+                console.log('VizPointDobuleClick event fires');
+                console.log(response);
+            })
+            // Render pinboard
+            .render();
+        }
+    
+    function makeVisualization(guid, vizGuid){
+        // Instantiate class for embedding a pinboard
+        let embed = new PinboardEmbed(embedDiv, {
+            frameParams: {},
+            /*param-start-modifyActions*/
+            disabledActions: [],
+            disabledActionReason: "Reason for disabling",
+            hiddenActions: [],
+            /*param-end-modifyActions*/
+            pinboardId: guid,
+            vizId: vizGuid
+            /*param-start-runtimeFilters*//*param-end-runtimeFilters*/
+        });
+
+        //hideNoDataImage(); 
+
+        embed
+            // Register event listeners
+            //.on(EmbedEvent.Init, showLoader)
+            //.on(EmbedEvent.Load, hideLoader)
+            /*param-start-customActionHandle*//*param-end-customActionHandle*/
+            .on(EmbedEvent.Error, () => {
+                //showNoDataImage();
+                //hideLoader();
+            })
+            .on(EmbedEvent.CustomAction, (response) => {
+                console.log('CustomAction event fires');
+                console.log(response);
+                const data = response.data;
+                if (response.id === 'create-jira'){
+                    let dataObj = JSON.parse(data);
+                    console.log(dataObj);
+                    let point = dataObj.selectedPoints[0];
+                    let val1 = point.selectedAttributes[0].value;
+                    let val2 = point.selectedMeasures[0].value;
+
+                    let summaryText = val1 + " - " + val2;
+                    document.getElementById('summary-field').value = summaryText;
+                    // Display the modal box
+                    modal.style.display = "block";
+                    //return modal;
+                }
+            } )
+            // Render pinboard
+            .render();
+        }
+    
+    function makeSearch(datasourceGuid, searchString){
+        // Instantiate class for embedding a pinboard
+        let embed = new SearchEmbed(embedDiv, {
+            frameParams: {},
+            /*param-start-modifyActions*/
+            disabledActions: [],
+            disabledActionReason: "Reason for disabling",
+            hiddenActions: [],
+            /*param-end-modifyActions*/
+            dataSources: [datasourceGuid],
+            searchOptions: {
+                searchTokenString: searchString, //write a TML query
+                //[commit date][revenue]
+                executeSearch: true,
+            },
+            /*param-start-runtimeFilters*//*param-end-runtimeFilters*/
+        });
+
+        //hideNoDataImage(); 
+
+        embed
+            // Register event listeners
+            //.on(EmbedEvent.Init, showLoader)
+            //.on(EmbedEvent.Load, hideLoader)
+            /*param-start-customActionHandle*//*param-end-customActionHandle*/
+            .on(EmbedEvent.Error, () => {
+                //showNoDataImage();
+                //hideLoader();
+            })
+            .on(EmbedEvent.CustomAction, (response) => {
+                console.log('CustomAction event fires');
+                console.log(response);
+                const data = response.data;
+                if (response.id === 'create-jira'){
+                    let dataObj = JSON.parse(data);
+                    console.log(dataObj);
+                    let point = dataObj.selectedPoints[0];
+                    let val1 = point.selectedAttributes[0].value;
+                    let val2 = point.selectedMeasures[0].value;
+
+                    let summaryText = val1 + " - " + val2;
+                    document.getElementById('summary-field').value = summaryText;
+                    // Display the modal box
+                    modal.style.display = "block";
+                    //return modal;
+                }
+            } )
+            // Render pinboard
+            .render();
+        }
+
+    function makeAnswer(answerGuid){
+        // Instantiate class for embedding a pinboard
+        let embed = new SearchEmbed(embedDiv, {
+            frameParams: {},
+            /*param-start-modifyActions*/
+            disabledActions: [],
+            disabledActionReason: "Reason for disabling",
+            hiddenActions: [],
+            /*param-end-modifyActions*/
+            answerId: answerGuid
+            /*param-start-runtimeFilters*//*param-end-runtimeFilters*/
+        });
+
+        //hideNoDataImage(); 
+
+        embed
+            // Register event listeners
+            //.on(EmbedEvent.Init, showLoader)
+            //.on(EmbedEvent.Load, hideLoader)
+            /*param-start-customActionHandle*//*param-end-customActionHandle*/
+            .on(EmbedEvent.Error, () => {
+                //showNoDataImage();
+                //hideLoader();
+            })
+            .on(EmbedEvent.CustomAction, (response) => {
+                console.log('CustomAction event fires');
+                console.log(response);
+                const data = response.data;
+                if (response.id === 'create-jira'){
+                    let dataObj = JSON.parse(data);
+                    console.log(dataObj);
+                    let point = dataObj.selectedPoints[0];
+                    let val1 = point.selectedAttributes[0].value;
+                    let val2 = point.selectedMeasures[0].value;
+
+                    let summaryText = val1 + " - " + val2;
+                    document.getElementById('summary-field').value = summaryText;
+                    // Display the modal box
+                    modal.style.display = "block";
+                    //return modal;
+                }
+            } )
+            // Render pinboard
+            .render();
+        }
+    
+    // Clears the embedded section when new menu item is selected
+    const clearEmbed = () => {
+        const div = document.getElementById("embed");
+        div.innerHTML = "";
+    }
+
+   /* Router function to read the content type and map to appropriate build function */
+   function loadContent(contentObj){
+        console.log('Running load content');
+        console.log(contentObj);
+        clearEmbed();
+        if(contentObj.description !== null){
+            writeDescription(contentObj.description);
+        }
+        else {
+            document.getElementById("description").style.display = "none";
+        }
+        if(contentObj.type == 'liveboard'){
+            makeLiveboard(contentObj.guid);
+        }
+        if(contentObj.type == 'visualization'){
+            makeVisualization(contentObj.guid, contentObj.vizGuid);
+        }
+        if(contentObj.type == 'search'){
+            makeSearch(contentObj.guid);
+        }
+        if(contentObj.type == 'answer'){
+            makeAnswer(contentObj.guid);
+        }
+   }
+
+    /*
+    * End of Embed Components builder functions
+    */
+
+    // Functions to show and hide a loader while iframe loads
+    function showLoader() {
+        document.getElementById("loader").style.display = "block";
+    }
+
+    function hideLoader() {
+        document.getElementById("loader").style.display = "none";
+    }
+
+    // Functions to show or hide No data images
+
+    function showNoDataImage() {
+        document.getElementById("no-data").style.display = "block";
+    }
+    function hideNoDataImage() {
+        document.getElementById("no-data").style.display = "none";
+    }
+
+
+
+    function writeDescription(description) {
+        let descDiv = document.getElementById("description");
+        descDiv.style.display = "block";
+        descDiv.style.fontSize = '18pt';
+        descDiv.innerHTML = '';
+        descDiv.innerText = description;
+
+    }
+
+
+
+   /* 
+    * We use material-icons for the images in the menu. This maps the types to the icons
+    */
+   var imageMap = {
+           'liveboard' : 'bar_chart',
+           'answer': 'search',
+           'search': 'search',
+           'visualization': 'bar_chart'
+       }
+
+    /*
+    * Write the sidebar menu based on menuItems
+    */
+   function writeMenu(itemArray){
+       console.log("writing menu");
+        let menuUl = document.getElementById('menu-2');
+        for(let i = 0, len = itemArray.length; i<len; i++){
+            let li = document.createElement('li');
+            li.innerHTML = "<span class='material-icons'>" + imageMap[itemArray[i].type] + "</span>&nbsp;" + itemArray[i]['name'];
+            li.onclick = function () { loadContent(menuItems[i]) ; }; 
+            menuUl.append(li);
+        }
+   }
+   writeMenu(menuItems);
+
+   // Initialize the default liveboard at the very end
+   makeLiveboard(defaultLiveboardId);
+
+</script>
+
+</body>

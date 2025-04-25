@@ -10,7 +10,7 @@ import {
   Action,
   AuthType,
   EmbedEvent,
-  PinboardEmbed,
+  LiveboardEmbed,
   SearchEmbed,
 } from 'https://unpkg.com/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
 
@@ -62,14 +62,14 @@ const embedSearch = () => {
 }
 
 /**
- * Add a PinboardEmbed component and render.
+ * Add a LiveboardEmbed component and render.
  */
-const embedPinboard = () => {
+const embedLiveboard = () => {
   // Add pinboard embed here.
 }
 
 /**
- * Add a PinboardEmbed component with a vizId and render.
+ * Add a LiveboardEmbed component with a vizId and render.
  */
 const embedPinboardViz = () => {
   // Add pinboard viz embed here.

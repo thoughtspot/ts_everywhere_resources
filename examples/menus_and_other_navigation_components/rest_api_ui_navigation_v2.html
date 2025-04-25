@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'/>
+    <title>Menu System examples from REST API</title>
+    <script>
+        /* variables related to ThoughtSpot instance */
+        let tsHost = "https://{}.thoughtspot.cloud";
+
+    </script>
+
+    <link rel="stylesheet" href="styles.css">
+    <!-- Fonts and icons from Google CDN -->
+    <link rel="preconnect" href="https://fonts.gstatic.com"> 
+    <link href="https://fonts.googleapis.com/css2?family=Material+Icons&family=Monoton&family=Bungee+Outline&family=Roboto:wght@400;500;700&family=Faster+One&family=Plaster&display=swap" rel="stylesheet">
+
+    <!-- from https://www.w3schools.com/howto/howto_js_tabs.asp -->
+    <style>
+        /* Style the tab */
+        .tab {
+        overflow: hidden;
+        border: 1px solid #ccc;
+        background-color: #f1f1f1;
+        }
+
+        /* Style the buttons that are used to open the tab content */
+        .tab button {
+        background-color: inherit;
+        float: left;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        padding: 14px 16px;
+        transition: 0.3s;
+        }
+
+        /* Change background color of buttons on hover */
+        .tab button:hover {
+        background-color: #ddd;
+        }
+
+        /* Create an active/current tablink class */
+        .tab button.active {
+        background-color: #ccc;
+        }
+
+        /* Style the tab content */
+        .tabcontent {
+        display: none;
+        padding: 6px 12px;
+        border: 1px solid #ccc;
+        border-top: none;
+        }
+
+        ul li {
+            margin: .25em;
+            padding: .25em;
+            list-style: none;
+            border: 1px solid black;
+        }
+        ul li:hover{
+            background-color: darkgray;
+            border: 1px solid black;
+        }
+
+        .nostyle {
+            border: none;
+            padding: none;
+            margin: none;
+        }
+
+        table {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 5px;
+        }
+        th {
+            border: 1px solid black;
+            background-color: darkgray;
+            padding: 10px;
+        }
+        td {
+            border: 1px solid black;
+            padding: 10px;
+        }
+
+        .flex-container {
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
+        .box-div {
+            border: 1px solid black;
+            margin: 10px;
+            padding: 5px;
+            height: 200px;
+            width: 200px;
+        }
+    </style>
+    <script>
+        function openTab(evt) {
+            console.log(evt);
+            // Declare all variables
+            var i, tabcontent, tablinks;
+
+            // Get all elements with class="tabcontent" and hide them
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+
+            // Get all elements with class="tablinks" and remove the class "active"
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            } 
+
+            // Show the current tab, and add an "active" class to the button that opened the tab
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+    </script>
+
+</head>
+
+<body>
+    <div id='header'>
+        <h1>Rendering Navigation Components from ThoughtSpot REST API</h1>
+        <div>
+            <p>This page uses the V2.0 REST API <b>/metadata/search</b> endpoint to retrieve details about the signed-in ThoughtSpot user.</p>
+            <p>The buttons use various rendering functions within the source to take details from REST API response and create navigation elements</p>
+            <p>Choose type of ThoughtSpot content:
+                <select id="contentTypeSelect">
+                    <option value="lb" selected>Dashboards</option>
+                    <option value="answer">Reports</option>
+                    <option value="table">Self-Service Datasources</option>
+                </select>
+            </p>
+            <p><button id="table-button">Show Table of Content</button> Renders a table like the ThoughtSpot home page using the <b>tableFromMetadataSearch()</b> function
+            <p><button id="trellis-button">Show Trellis of Tiles</button> Renders tiles split by tags in a trellis form using <b>drawTrellisOfTiles()</b> function
+            <p><button id="sidebar-menu-button">Show Left Side Menu</button> Renders menu on left side using <b>drawSidebarMenu()</b> function
+
+        </div>
+    </div>
+    <div id='page-content-div' style='display: flex;'>
+
+        <div id='sidebar' style='flex: 0 0 300px; display: none'>
+            <h2 id="liveboards-header">Dashboards</h2>
+            <div id="liveboards-section" class="nostyle">
+                <ul id='liveboards-menu'>
+                </ul>
+            </div>
+            <div id="answers-section" class="nostyle">
+                <h2 id="answers-header">Reports</h2>
+                    <ul id='answers-menu'></ul>
+            </div>
+            <div id="search-section" class="nostyle">
+                <h2 id="search-header">Self-Service Datasources</h2>
+                    <ul id="datasources-menu"></ul>
+            </div>
+        </div>
+
+        <div id='main-content-div' style='flex: 3 3 0; height: 800px;'>
+            <div id='tab-menu' class='tab'></div>
+        </div>
+</div>
+
+
+<!-- Put the ThoughtSpot EmbedSDK script down here so it runs after the page loads fully -->
+<script type='module'>
+
+    // Import ThoughtSpot SDK
+    import {
+        init,
+        PinboardEmbed,
+        LiveboardEmbed,
+        SearchEmbed,
+        Action,
+        RuntimeFilterOp,
+        EmbedEvent,
+        HostEvent,
+        AuthType,
+        prefetch,
+        tokenizedFetch
+    } from 'https://cdn.jsdelivr.net/npm/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js'; // Copied in from GitHub
+
+    // Init is all that is needed to establish session to make REST API calls
+    init({
+        thoughtSpotHost: tsHost, 
+        authType: AuthType.None  // you must sign-in to ThoughtSpot directly for AuthType.None to work
+        ,
+        callPrefetch: true  // caches the Embed SDK JavaScript prior to first load 
+        //, customCssUrl:"cdn.jsdelivr.net/gh/thoughtspot/custom-css-demo/dark5.css"
+    });
+
+
+    /*
+    * START REST API calling functions
+    */ 
+
+    /* 'generic' function to make any REST API call - possibly might need a way to set custom headers */
+    async function restApiCallV2(endpoint, httpVerb, apiRequestObj){
+        const tsApiVersion = '2.0';
+        const baseUrl = `${tsHost}/api/rest/${tsApiVersion}/`;  // Forward ticks allow variables in strings
+        const apiFullEndpoint = baseUrl + endpoint;
+        console.log("Executing fetch");
+        /* 
+        * Fetch is asynchronous and returns a Promise, which always has a .then() and .catch() method so you can chain
+        * additional code to happen after the REST API call returns back.
+        * Alternatively, you can use the 'async' and 'await' patterns
+        * https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Asynchronous/Promises
+        */
+
+        let fetchArgs = {
+                method: httpVerb.toUpperCase(),
+                headers: {
+                    "Accept": "application/json",
+                    "X-Requested-By": "ThoughtSpot",
+                    "Content-Type": "application/json"
+                    },
+                credentials: "include"
+            }
+        // Some type of request might not have a body
+        if (apiRequestObj !== null){
+            fetchArgs['body'] = JSON.stringify(apiRequestObj);
+        }
+        
+        // With the async modifier on the function, you add return await to the fetch() call here
+        return await tokenizedFetch(
+            apiFullEndpoint,
+            fetchArgs
+        ).then(response =>
+        {
+            console.log("Fetch response returned with status code " + response.status);
+            // Parse 4XX or 500 HTTP status code errors from the API 
+            if (!response.ok) {
+                console.log("HTTP response indicates an error from the API");
+                throw new Error("Received HTTP response " + response.status + "with the message " + response.statusText)
+                // Alternatively, check for specific error codes you might expect, like a 403
+                /*
+                if( response.status == 403){
+                    // retrySSOProcess(); // Example action to take based on status 
+                }
+                */
+            }
+            else {
+                if( response.status === 200){
+                    return response.json(); // Returns the JSON of the response 
+                }
+                else if (response.status === 204){
+                    return true;  // 204 is success without any body
+                }
+
+            }
+        }).catch(error =>
+        {
+            console.error("Unable to get the " + endpoint + " response: " + error);
+        });
+    }
+    
+    /* Wrapper function for calling /metadata/search with any request */
+    async function callMetadataSearchApi(searchRequestObject){
+        let endpoint = 'metadata/search';
+        let verb = 'POST';
+
+        return await restApiCallV2(endpoint, verb, searchRequestObject).then(
+            response => {
+                // Additional logging to the console
+                console.log("API response:", response);
+                console.log(response);
+                return response;
+            }
+        );
+    }
+
+
+    /*
+    * END of REST API functions
+    */
+
+ 
+    /*
+    * START RENDERING FUNCTIONS: Functions to convert the REST API responses into rendered navigation elements
+    */
+
+    // Space to load the large navigation elements
+    let mainContentDiv = document.getElementById('main-content-div');
+    document.mainContentDiv = mainContentDiv;
+
+    function clearMainContentDiv(){
+        mainContentDiv.innerHTML = "";  // Clear existing display area
+    }
+    document.clearMainContentDiv = clearMainContentDiv;
+
+    // 
+    function tableFromMetadataSearch(searchResponse){
+        console.log(searchResponse);
+        let t = document.createElement('table');
+
+        // Make table headers 
+        let thead = document.createElement('thead');
+        t.append(thead);
+        let thr = document.createElement('tr');
+        thead.append(thr);
+        let table_headers = ['Name', 'Description', 'Tags', 'Modified', 'Author'];
+        for (let i=0, len=table_headers.length; i < len; i++){
+            let th = document.createElement('th');
+            th.innerText = table_headers[i];
+            thr.append(th);
+        }
+
+        // Go through response and build rows
+        for (let i=0, len=searchResponse.length; i < len; i++){
+            let headers = searchResponse[i]['metadata_header'];
+
+            // Here get all the details to match to the columns
+            let id = headers['id'];
+            let name = headers['name'];
+            let desc = headers['description'];
+            let tags = headers['tags']; // Tags is more complex not simply a string
+            let modified_timestamp = headers['modified'];
+            let author_display_name = headers['authorDisplayName'];
+
+            /* Build out the actual rows */
+            
+            // Start the row
+            let tr = document.createElement('tr');
+            // Add the row to the table
+            t.append(tr);
+            // Create the cells for each column
+            let tds = [];
+            let column_count = 5;
+            for(let i=0; i<column_count; i++){
+                let td = document.createElement('td');
+                tr.append(td);
+                tds[i] = td;
+            }
+            
+            // Name Column, with link to content
+            // Because each type of content loads different components, need some if/thens checking what type of link to make (could be done better)
+            if (currentTypeSelection == 'lb'){
+                tds[0].innerHTML = `<a href="#" onclick="loadContent({'type': 'liveboard', 'guid': '${id}'});">${name}</a>`; 
+            }
+            else if (currentTypeSelection == 'answer'){
+                tds[0].innerHTML = `<a href="#" onclick="loadContent({'type': 'answer', 'guid': '${id}'});">${name}</a>`; 
+            }
+            else if (currentTypeSelection == 'table'){
+                tds[0].innerHTML = `<a href="#" onclick="loadContent({'type': 'search', 'guid': '${id}'});">${name}</a>`; 
+            }
+          
+            // Description column
+            if(desc != null){
+                tds[1].innerText = desc;
+            }
+
+            // Tags column
+            //console.log(tags);
+            // Tags is an Array of Tag objects, with properties ('name' being the important one)
+            if (tags.length > 0){
+                let tagNames = [];
+                for(let k = 0, len = tags.length; k<len; k++){
+                    let tagName = tags[k]['name'];
+                    tagNames.push(tagName);
+                }
+                tds[2].innerText = tagNames.join(', ');
+            }
+
+            // Modified Date column, requires processing to turn into display strings
+            let modifiedTimestamp = modified_timestamp;
+            let modifiedDate = new Date(modifiedTimestamp);
+            let dateString = modifiedDate.toUTCString();
+            tds[3].innerText = dateString;
+
+            // Author Name Column
+            tds[4].innerText = author_display_name;
+
+            /* End of building the rows */
+        }
+
+        return t;
+    }
+
+    function allTagsFromMetadataSearch(searchResponse){
+        let tagNames = {};
+        for (let i=0, len=searchResponse.length; i < len; i++){
+            let headers = searchResponse[i]['metadata_header'];
+            let tags = headers['tags'];
+            // Tags is an Array of Tag objects, with properties ('name' being the important one)
+            if (tags.length > 0){
+                for(let k = 0, len = tags.length; k<len; k++){
+                    tagNames[tags[k]['name']] = true;
+                }
+            }
+        }
+        return Object.keys(tagNames);
+    }
+
+    function divFromMetadataSearch(searchResponseItem, tagName){
+        console.log(searchResponseItem, tagName);
+
+        // Go through response and build rows
+        let headers = searchResponseItem['metadata_header'];
+
+        // Here get all the details to match to the columns
+        let id = headers['id'];
+        let name = headers['name'];
+        let desc = headers['description'];
+        let tags = headers['tags']; // Tags is more complex not simply a string
+        let modified_timestamp = headers['modified'];
+        let author_display_name = headers['authorDisplayName'];
+        
+        // Tags filter column
+        console.log(tags);
+        
+        // Tags is an Array of Tag objects, with properties ('name' being the important one)
+        // Only return if the specified tagName is found
+        if (tags.length > 0){
+            let tagNames = [];
+            for(let k = 0, len = tags.length; k<len; k++){
+                let currentTagName = tags[k]['name'];
+                if (tagName == currentTagName){
+                    // Start the row
+                    let d = document.createElement('div');
+                    
+                    let p = document.createElement('p');
+
+                    // Name Column, with link to content
+                    // Because each type of content loads different components, need some if/thens checking what type of link to make (could be done better)
+                    if (currentTypeSelection == 'lb'){
+                        p.innerHTML = `<a href="#" onclick="loadContent({'type': 'liveboard', 'guid': '${id}'});">${name}</a>`; 
+                    }
+                    else if (currentTypeSelection == 'answer'){
+                        p.innerHTML = `<a href="#" onclick="loadContent({'type': 'answer', 'guid': '${id}'});">${name}</a>`; 
+                    }
+                    else if (currentTypeSelection == 'table'){
+                        p.innerHTML = `<a href="#" onclick="loadContent({'type': 'search', 'guid': '${id}'});">${name}</a>`; 
+                    }
+                    d.append(p);
+                    console.log(d);
+                    return d;
+                }
+            }
+        }
+        else if (tagName == null && tags.length == 0){
+            // Start the row
+            let d = document.createElement('div');
+                
+            let p = document.createElement('p');
+            if (currentTypeSelection == 'lb'){
+                p.innerHTML = `<a href="#" onclick="loadContent({'type': 'liveboard', 'guid': '${id}'});">${name}</a>`; 
+            }
+            else if (currentTypeSelection == 'answer'){
+                p.innerHTML = `<a href="#" onclick="loadContent({'type': 'answer', 'guid': '${id}'});">${name}</a>`; 
+            }
+            else if (currentTypeSelection == 'table'){
+                p.innerHTML = `<a href="#" onclick="loadContent({'type': 'search', 'guid': '${id}'});">${name}</a>`; 
+            }
+            d.append(p);
+            console.log(d);
+            return d;
+        }
+        return null;
+        
+    }
+
+    /*
+    * END of navigation element generation functions
+    */
+
+    /*
+
+
+    /*
+    * Calls to REST API and rendering functions to actually generate elements
+    */
+
+    // Request that determines which objects to bring to list
+    const lbRequestObject = {
+            "metadata": [
+                {
+                    "type": "LIVEBOARD"
+                }
+                ],
+            'record_offset': 0,  // Adjust to do pagination
+            'record_size': 100000 // Adjust to do pagination (or handle in browser with table component)
+        }
+    
+    const answerRequestObject = {
+            "metadata": [
+                {
+                    "type": "ANSWER"
+                }
+                ],
+            'record_offset': 0,  // Adjust to do pagination
+            'record_size': 100000 // Adjust to do pagination (or handle in browser with table component)
+        }
+    
+    const tableRequestObject = {
+            "metadata": [
+                {
+                    "type": "LOGICAL_TABLE"
+                }
+                ],
+            'record_offset': 0,  // Adjust to do pagination
+            'record_size': 100000 // Adjust to do pagination (or handle in browser with table component)
+        }
+    
+    // Call REST API to get the search results for each type 
+    let lbResponse = await callMetadataSearchApi(lbRequestObject);
+    let answerResponse = await callMetadataSearchApi(answerRequestObject);
+    let tableResponse = await callMetadataSearchApi(tableRequestObject);
+    console.log("Final results from the callMetadataSearchApi function: ");
+
+    // Combine together for easy switching or combining goether
+    let metadataResponses = {
+        'lb' : lbResponse,
+        'answer' : answerResponse,
+        'table' : tableResponse
+    }
+    console.log(metadataResponses);
+
+    let currentTypeSelection = 'lb';
+    let searchResponse = metadataResponses[currentTypeSelection]; // Will be overridden by select options
+
+
+    // Pull the unique set of Tag Names from the Search Results
+    let tagNames = allTagsFromMetadataSearch(searchResponse);
+    console.log("tagNames: ", tagNames);
+        
+
+    // Table replicating the Home / Liveboard / Answer listing pages
+    function drawTable(){
+        clearMainContentDiv();
+        let table = tableFromMetadataSearch(searchResponse);
+        mainContentDiv.append(table);
+    }
+
+    
+
+    function makeFlexSection(name){
+        let e = document.createElement("h3");
+        e.innerText = name;
+        mainContentDiv.append(e);
+        mainContentDiv.append(document.createElement('hr'));
+        let flexDiv = document.createElement('div');
+        flexDiv.style.display = 'flex';
+        flexDiv.classList.add('flex-container');
+        return flexDiv;
+    }
+
+    // A set of tiles in a flex-box trellis, split by tag name
+    function drawTrellisOfTiles(searchResponse){
+        clearMainContentDiv();
+        for (const tagName in tagNames){
+            let flexDiv = makeFlexSection(tagNames[tagName]);
+            for (let i=0, len=searchResponse.length; i < len; i++){
+                let d = divFromMetadataSearch(searchResponse[i], tagNames[tagName]);
+                
+                if(d !== null){
+                    d.classList.add('box-div');
+                    flexDiv.append(d);
+                }
+                
+            }
+            mainContentDiv.append(flexDiv);
+        }
+
+        // Last trellis, for those with no tags
+        let flexDiv = makeFlexSection('Uncategorized');
+        for (let i=0, len=searchResponse.length; i < len; i++){
+            let d = divFromMetadataSearch(searchResponse[i], null);
+                    
+            if(d !== null){
+                d.classList.add('box-div');
+                flexDiv.append(d);
+            }
+        }
+        mainContentDiv.append(flexDiv);
+    }
+
+    /* 
+    * We use material-icons for the images in the menu. This maps the types to the icons
+    */
+   var imageMap = {
+           'liveboard' : 'bar_chart',
+           'answer': 'search',
+           'search': 'search',
+           'visualization': 'bar_chart'
+       }
+
+    function drawSidebarMenu(metadataResponses){
+        let sidebar = document.getElementById('sidebar');
+        sidebar.style.display = 'block';
+
+        console.log("writing menu");
+
+        // Liveboards menu 
+        let menuUl = document.getElementById('liveboards-menu');
+        let lbs = metadataResponses['lb'];
+        for(let i = 0, len = lbs.length; i<len; i++){
+            let li = document.createElement('li');
+            li.innerHTML = "<span class='material-icons'>" + imageMap['liveboard'] + "</span>&nbsp;" + lbs[i]['metadata_name'];
+            // loadContent function below handles various object types and does embed within this page, but in an app would go to a different page typically
+            li.onclick = function () { document.loadContent({'type': 'liveboard', 'guid': lbs[i]['metadata_id']}) ; }; 
+            menuUl.append(li);
+        }
+
+        // Answers menu
+        menuUl = document.getElementById('answers-menu');
+        let answers = metadataResponses['answer'];
+        for(let i = 0, len = answers.length; i<len; i++){
+            let li = document.createElement('li');
+            li.innerHTML = "<span class='material-icons'>" + imageMap['answer'] + "</span>&nbsp;" + answers[i]['metadata_name'];
+            // loadContent function below handles various object types and does embed within this page, but in an app would go to a different page typically
+            li.onclick = function () { loadContent({'type': 'answer', 'guid': answers[i]['metadata_id']}) }; 
+            menuUl.append(li);
+        }
+
+        // Datasources menu
+        menuUl = document.getElementById("datasources-menu");
+        let tables = metadataResponses['table'];
+        for(let i = 0, len = tables.length; i<len; i++){
+            let li = document.createElement('li');
+            li.innerHTML = "<span class='material-icons'>" + imageMap['search'] + "</span>&nbsp;" + tables[i]['metadata_name'];
+            // loadContent function below handles various object types and does embed within this page, but in an app would go to a different page typically
+            li.onclick = function () { loadContent({'type': 'search', 'guid': tables[i]['metadata_id']})}; 
+            menuUl.append(li);
+        }
+
+    }
+
+    /*
+    * Assign to UI Buttons
+    */ 
+    document.getElementById('table-button').onclick = () => { drawTable(searchResponse);};
+    document.getElementById('trellis-button').onclick = () => { drawTrellisOfTiles(searchResponse);};
+    document.getElementById('sidebar-menu-button').onclick = () => { drawSidebarMenu(metadataResponses);};
+    // Look at drop-down for type of content above, adjust the response to render
+    document.getElementById('contentTypeSelect').onchange = (e) => {
+        //console.log(e);
+        currentTypeSelection = e.srcElement.options[e.srcElement.selectedIndex].value;
+        searchResponse = metadataResponses[currentTypeSelection];
+
+    }
+
+
+
+    /*
+    * Functions for rendering ThoughtSpot content
+    * In most cases, these would be separate pages with their own URL patterns, rather than all loading in a "single-page app" like this
+    */ 
+
+    const embedDiv = mainContentDiv;
+    let embed;  // Global scoped variable for the current embedded object
+    //console.log("This is embedDiv:", embedDiv);
+
+    /* Router function to read the content type and map to appropriate build function */
+   function loadContent(contentObj){
+        console.log('Running load content');
+        console.log(contentObj);
+        document.clearMainContentDiv();
+
+        if(contentObj.type == 'liveboard'){
+            makeLiveboard(contentObj.guid);
+        }
+        if(contentObj.type == 'visualization'){
+            makeVisualization(contentObj.guid, contentObj.vizGuid);
+        }
+        if(contentObj.type == 'search'){
+            makeSearch(contentObj.guid);
+        }
+        if(contentObj.type == 'answer'){
+            makeAnswer(contentObj.guid);
+        }
+   }
+   // Export to other scripts
+   document.loadContent = loadContent;
+
+       /*
+    * Start of functions to create Embed components
+    */
+
+    function makeLiveboard(guid){
+        // Instantiate class for embedding a pinboard
+        embed = new LiveboardEmbed(embedDiv, {
+            frameParams: {
+                height: '100%',
+                width: '100%'
+            },
+            /*param-start-modifyActions*/
+            disabledActions: [],
+            disabledActionReason: "Reason for disabling",
+            hiddenActions: [],
+            /*param-end-modifyActions*/
+            pinboardId: guid,
+            /*runtimeFilters: [ {
+                columnName: 'Country', // eg: color
+                operator: RuntimeFilterOp.EQ,
+                values: ['Taiwan'] // eg: red
+                }
+            ]
+            /*param-start-runtimeFilters*//*param-end-runtimeFilters*/
+        });
+
+        //hideNoDataImage(); 
+
+        embed
+            /*
+            * Register event listeners - https://developers.thoughtspot.com/docs/?pageid=events-app-integration
+            */
+            // Safari and some Chrome modes block 3rd party cookies. Let's you make a custom announcement
+            .on(EmbedEvent.NoCookieAccess, () => {
+                alert("Your browser has 3rd Party Cookie Access disabled.\nPlease enable to allow analytics and reload this page.\nIn Safari, you should disable 'Prevent Cross-Site Tracking' ");
+                document.getElementById('embed').innerHTML = "";
+                //let p = document.createElement('p');
+                //p.innerHTML = "<p>Your browser has 3rd Party Cookie Access disabled.<p>Please enable to allow analytics and reload this page.<p>In Safari, you should disable 'Prevent Cross-Site Tracking'";
+                document.getElementById('embed').innerHTML = "<p>Your browser has 3rd Party Cookie Access disabled.<p>Please enable to allow analytics and reload this page.<p>In Safari, you should disable 'Prevent Cross-Site Tracking'";
+                //document.getElementById('coverup').append(p);
+                document.getElementById('coverup').style.display = 'none';
+            })
+            // Fires when everything is ready and loaded
+            .on(EmbedEvent.LiveboardRendered, () => {
+                // document.getElementById('coverup').style.display = 'none';
+            })
+            //.on(EmbedEvent.Init, showLoader)
+            //.on(EmbedEvent.Load, hideLoader)
+
+            // ThoughtSpot session can expire. Visual Embed SDK can go through login flow again automatically, 
+            // but you may want to adjust the page as this process happens
+            .on(EmbedEvent.AuthExpire, () => {
+                console.log('ThoughtSpot session has expired.');
+            })
+            // Any other error capture
+            .on(EmbedEvent.Error, (response) => {
+                console.log("An error occurred: ");
+                console.log(response);
+                //document.getElementById('embed').innerHTML = "<p>An error has occured when loading analytics. <p>Please reload the page to try again, if the issue continues notify your administrator.";
+                //document.getElementById('coverup').append(p);
+                document.getElementById('coverup').style.display = 'none';
+            })
+            // Custom Actions appear in either main Viz menu or in right-click context menu
+            // Which custom actions appear in the menus is configured between Develop tab in ThoughtSpot
+            // and configurations on individual Liveboards using the Lightning Bolt menu on the right
+            .on(EmbedEvent.CustomAction, (response) => {
+                console.log('CustomAction event fires');
+                console.log(response);
+                const data = response.data;
+                let dataObj = JSON.parse(data);
+                    console.log(dataObj);
+                    let point = dataObj.clickedPoint;
+                    let val1 = point.selectedAttributes[0].value;
+                    let val2 = point.selectedMeasures[0].value;
+
+                    let summaryText = val1 + " - " + val2;
+                    document.getElementById('summary-field').value = summaryText;
+                    // Display the modal box
+                    modal.style.display = "block";
+                if (response.id === 'create-jira'){
+                    let dataObj = JSON.parse(data);
+                    console.log(dataObj);
+                    let point = dataObj.clickedPoint;
+                    let val1 = point.selectedAttributes[0].value;
+                    let val2 = point.selectedMeasures[0].value;
+
+                    let summaryText = val1 + " - " + val2;
+                    document.getElementById('summary-field').value = summaryText;
+                    // Display the modal box
+                    modal.style.display = "block";
+                    //return modal;
+                }
+            } )
+            // VizPointClick fires off on any click, can be used instead of Custom Action in Context Menu
+            .on(EmbedEvent.VizPointClick, (response) => {
+                console.log('VizPointClick event fires');
+                console.log(response);
+                const data = response.data;
+                const dataObj = data;
+                //let dataObj = JSON.parse(data);
+                    //console.log(dataObj);
+                    let point = dataObj.clickedPoint;
+                    let val1 = point.selectedAttributes[0].value;
+                    let val2 = point.selectedMeasures[0].value;
+
+                    let summaryText = val1 + " - " + val2;
+                    document.getElementById('summary-field').value = summaryText;
+                    // Display the modal box
+                    modal.style.display = "block";
+            })
+            // VizPointClick fires off on a double-click 
+            .on(EmbedEvent.VizPointDoubleClick, (response) => {
+                console.log('VizPointDobuleClick event fires');
+                console.log(response);
+            })
+            // Render pinboard
+            .render();
+        }
+    
+    function makeVisualization(guid, vizGuid){
+        // Instantiate class for embedding a pinboard
+        let embed = new LiveboardEmbed(embedDiv, {
+            frameParams: {},
+            /*param-start-modifyActions*/
+            disabledActions: [],
+            disabledActionReason: "Reason for disabling",
+            hiddenActions: [],
+            /*param-end-modifyActions*/
+            pinboardId: guid,
+            vizId: vizGuid
+            /*param-start-runtimeFilters*//*param-end-runtimeFilters*/
+        });
+
+        //hideNoDataImage(); 
+
+        embed
+            // Register event listeners
+            //.on(EmbedEvent.Init, showLoader)
+            //.on(EmbedEvent.Load, hideLoader)
+            .on(EmbedEvent.Error, () => {
+                //showNoDataImage();
+                //hideLoader();
+            })
+            .on(EmbedEvent.CustomAction, (response) => {
+                console.log('CustomAction event fires');
+                console.log(response);
+                const data = response.data;
+                let dataObj = JSON.parse(data);
+                    console.log(dataObj);
+                    let point = dataObj.selectedPoints[0];
+                    let val1 = point.selectedAttributes[0].value;
+                    let val2 = point.selectedMeasures[0].value;
+
+                    let summaryText = val1 + " - " + val2;
+                    document.getElementById('summary-field').value = summaryText;
+                    // Display the modal box
+                    modal.style.display = "block";
+                    //return modal;
+
+                if (response.id === 'create-jira'){
+                    let dataObj = JSON.parse(data);
+                    console.log(dataObj);
+                    let point = dataObj.selectedPoints[0];
+                    let val1 = point.selectedAttributes[0].value;
+                    let val2 = point.selectedMeasures[0].value;
+
+                    let summaryText = val1 + " - " + val2;
+                    document.getElementById('summary-field').value = summaryText;
+                    // Display the modal box
+                    modal.style.display = "block";
+                    //return modal;
+                }
+            } )
+            // Render pinboard
+            .render();
+        }
+    
+    function makeSearch(datasourceGuid, searchString){
+        // Instantiate class for embedding a pinboard
+        let embed = new SearchEmbed(embedDiv, {
+            frameParams: {},
+            /*param-start-modifyActions*/
+            disabledActions: [],
+            disabledActionReason: "Reason for disabling",
+            hiddenActions: [],
+            /*param-end-modifyActions*/
+            dataSources: [datasourceGuid],
+            searchOptions: {
+                searchTokenString: searchString, //write a TML query
+                //[commit date][revenue]
+                executeSearch: true,
+            },
+            /*param-start-runtimeFilters*//*param-end-runtimeFilters*/
+        });
+
+        //hideNoDataImage(); 
+
+        embed
+            // Register event listeners
+            //.on(EmbedEvent.Init, showLoader)
+            //.on(EmbedEvent.Load, hideLoader)
+            /*param-start-customActionHandle*//*param-end-customActionHandle*/
+            .on(EmbedEvent.Error, () => {
+                //showNoDataImage();
+                //hideLoader();
+            })
+            .on(EmbedEvent.CustomAction, (response) => {
+                console.log('CustomAction event fires');
+                console.log(response);
+                const data = response.data;
+                if (response.id === 'create-jira'){
+                    let dataObj = JSON.parse(data);
+                    console.log(dataObj);
+                    let point = dataObj.selectedPoints[0];
+                    let val1 = point.selectedAttributes[0].value;
+                    let val2 = point.selectedMeasures[0].value;
+
+                    let summaryText = val1 + " - " + val2;
+                    document.getElementById('summary-field').value = summaryText;
+                    // Display the modal box
+                    modal.style.display = "block";
+                    //return modal;
+                }
+            } )
+            // Render pinboard
+            .render();
+        }
+
+    function makeAnswer(answerGuid){
+        // Instantiate class for embedding a pinboard
+        let embed = new SearchEmbed(embedDiv, {
+            frameParams: {},
+            /*param-start-modifyActions*/
+            disabledActions: [],
+            disabledActionReason: "Reason for disabling",
+            hiddenActions: [],
+            /*param-end-modifyActions*/
+            answerId: answerGuid
+            /*param-start-runtimeFilters*//*param-end-runtimeFilters*/
+        });
+
+        //hideNoDataImage(); 
+
+        embed
+            // Register event listeners
+            //.on(EmbedEvent.Init, showLoader)
+            //.on(EmbedEvent.Load, hideLoader)
+            /*param-start-customActionHandle*//*param-end-customActionHandle*/
+            .on(EmbedEvent.Error, () => {
+                //showNoDataImage();
+                //hideLoader();
+            })
+            .on(EmbedEvent.CustomAction, (response) => {
+                console.log('CustomAction event fires');
+                console.log(response);
+                const data = response.data;
+                if (response.id === 'create-jira'){
+                    let dataObj = JSON.parse(data);
+                    console.log(dataObj);
+                    let point = dataObj.selectedPoints[0];
+                    let val1 = point.selectedAttributes[0].value;
+                    let val2 = point.selectedMeasures[0].value;
+
+                    let summaryText = val1 + " - " + val2;
+                    document.getElementById('summary-field').value = summaryText;
+                    // Display the modal box
+                    modal.style.display = "block";
+                    //return modal;
+                }
+            } )
+            .render();
+        }
+</script>
+
+</body>

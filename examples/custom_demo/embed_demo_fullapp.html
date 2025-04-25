@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<!--
+  Extremely simple ThoughtSpot Embed framework, meant to take the code from the playground
+-->
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'/>
+    <title>ThoughtSpot Embed Test</title>
+    <style>
+        body {
+            margin: 0px;
+            padding: 0px;
+        }
+        div {
+            /*border: 1px dashed black;
+            /*margin: 4px;
+            padding: 10px;*/
+        }
+
+        #embed {
+            /*height: 800px;
+            min-width: 600px;*/
+            height: 100%;
+            width: 100%;
+            min-height: 800px;
+        }
+
+        body {
+            background-color: rgb(250, 250, 250);
+            font-family: sans-serif;
+        }
+
+
+        #no-data {
+            display: none;
+        }
+
+        /* https://www.w3schools.com/howto/howto_css_modals.asp */
+        /* The Modal (background) */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 4; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            min-height: 600px;
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        /* Modal Content/Box */
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; /* Could be more or less, depending on screen size */
+        }
+
+        /* The Close Button */
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        #floatingButton {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 5; /* Sit on top */
+            left: 650px;
+            top: 35px;
+           /* width: 100%; /* Full width */
+           /* height: 100%; /* Full height */
+           /* min-height: 600px;
+            overflow: auto; /* Enable scroll if needed */
+           /* background-color: rgb(0,0,0); /* Fallback color */
+           /* background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+
+        #topMenu {
+            background-color: black;
+            width: 100%;
+            margin: 0px;
+            padding: 10px 5px 5px 5px;
+            color: white;
+        }
+
+        a {
+            color: white;
+            text-decoration: none;
+        }
+        a:visited {
+            color: green;
+        }
+        
+        button {
+            font-size: 0.8em;
+
+        }
+    </style>
+    
+</head>
+
+<body>
+
+<!-- Custom Top Menu -->    
+<div id='topMenu'>
+    <h2>Custom Top Menu --> <a href='#'>Home</a> | <a href='#'>Reports</a> | &nbsp; <button id='topMenuButton'>Action Button</button></h2>
+</div>
+    
+      <!-- Floating button -->
+     <!-- <div id='floatingButton' >
+    <button class='buttonAbove'>Button From Wrapper</button>
+</div>-->
+
+    <!--<div id='header'><h1>Test of ThoughtSpot Embed</h1></div>-->
+    <div id='page-content-div' style='display: flex;'>
+        <div id='main-content-div' style='flex: 3 3 0;'>
+            <!-- This div will show before the ThoughtSpot content has loaded -->
+            <div id="loader"><h1 id='loaderMsg'>Custom Loading screen in this div</h1></div>
+            <!-- This div will show if no data comes though / error in loading -->
+            <div id="no-data">No data came through!</div>
+            <!-- DIV that contains the actual embeded ThoughtSpot content -->
+            <div id='embed' style='opacity: 0;'></div>
+        </div>
+</div>
+<!-- from https://www.w3schools.com/howto/howto_css_modals.asp -->
+<!-- The Modal -->
+<!--<div id="myModal" class="modal">
+
+    <!-- Modal content -->
+ <!--   <div class="modal-content">
+      <span class="close">&times;</span>
+      <iframe src="https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d110155.28199109646!2d-97.72072970930887!3d30.369345053008193!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1st-mobile%20store%20near%20me!5e0!3m2!1sen!2sus!4v1638467549208!5m2!1sen!2sus" width="800" height="600" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+    </div>
+  
+</div>-->
+
+<!-- Example of hidden modal window that can overlay ON TOP of the FullApp embed when reacting to events, or 
+     from other UI elements that part of the 'embedding page'
+-->
+<div id="myModal2" class="modal">
+
+    <!-- Modal content, pop-up on a custom action. Doesn't actually DO anything when the buttons are pressed -->
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <!-- Header of the modal, change to what feels appropriate -->
+        <h3>Change Status of Items</h3>
+
+        <p>Items to change:</p>
+        <textarea style="height: 100px; width: 450px;" id="modal-textarea"></textarea>
+        <p>
+        <input type="radio" id="html" name="fav_language" value="HTML">
+        <label for="html">Yes</label>
+        <input type="radio" id="css" name="fav_language" value="CSS">
+        <label for="css">No</label>
+        <input type="radio" id="javascript" name="fav_language" value="JavaScript">
+        <label for="javascript">Undetermined</label>
+        
+        <p><button onclick='document.getElementById("myModal2").style.display="none";'>Cancel</button> <button onclick='document.getElementById("myModal2").style.display="none";'>Change Status</button></p>
+      </div>
+  
+</div>
+
+
+<!-- Using luxon.js for easy time period calculations in filters, you can install locally if you like -->
+<script src="https://cdn.jsdelivr.net/npm/luxon@3.3.0/build/global/luxon.min.js"></script>
+
+<!-- Put the ThoughtSpot EmbedSDK script down here so it runs after the page loads fully -->
+<script type='module'>
+    let tsHost = "https://{}.thoughtspot.cloud"; // No trailing slash
+// Import ThoughtSpot SDK
+import {
+  init,
+  AppEmbed,
+  Action,
+  RuntimeFilterOp,
+  EmbedEvent,
+  HostEvent,
+  AuthType,
+  Page
+} from 'https://cdn.jsdelivr.net/npm/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
+// import "./styles.css";
+
+/*
+* Would be built out if using Trusted Authentication for single sign-on
+*/
+function tokenCallbackFunc(){
+    console.log('tokenCallback fires');
+    return 'not-a-token';
+}
+
+console.log('About to init the embed');
+
+/* 
+* Initialize embed configuration
+* If doing a 'full page' FullApp embed, you can leave AuthType.None and just have people use ThoughtSpot direct sign-in
+* But if they are using SAML or OIDC, you'll want to use either AuthType.SAMLRedirect or AuthType.OIDCRedirect (per https://developers.thoughtspot.com/docs/?pageid=embed-auth)
+*/
+init({
+  thoughtSpotHost: tsHost,
+   authType: AuthType.None
+  //authType: AuthType.AuthServer,
+  //username: tsUsername, // Username as a string, required for Trusted Auth to work
+  //getAuthToken: tokenCallbackFunc  // Callback function returning the token as a string
+});
+
+// Instantiate class for embedding a FullAppEmbed
+/*
+* The potential pageId values are defined under https://developers.thoughtspot.com/docs/?pageid=full-embed#_create_an_instance_of_the_appembed_object
+* You can also load up to a direct 'path' to a page using the path: attribute
+* A more complete version beyond a demo would define some form of URL parameters that could be read to allow
+* bookmarking to load various pages within the embed in a more permanent way
+*/
+
+const startPath = Page.Home;
+let currentPath = startPath;
+// Simple global object to handle details about what is visible in the AppEmbed component at a given moment
+let tsAppState = {
+    currentPath: startPath,
+    currentDatasources: [], // Can be set later when detected
+    // return back what is being viewed at the moment
+    get pageType() {
+        if (this.currentPath.includes('/saved-answer/')){
+            return 'answer';
+        }
+        else if (this.currentPath.includes('/pinboard/')){
+            return 'liveboard';
+        }
+        /*
+        * Others are meant to match the exact pageId from SDK
+        */
+        else if(this.currentPath.includes('/answer/')){
+            return 'Search';
+        }
+        else if(this.currentPath.includes('/answers')){
+            return 'Answers';
+        }
+        else if (this.currentPath.includes('/pinboards')){
+            return 'Liveboards';
+        }
+        else if(this.currentPath.includes('/insights')){
+            return 'SpotIQ';
+        }
+        else if(this.currentPath.includes('/monitor')){
+            return 'Monitor';
+        }
+        else if(this.currentPath.includes('/data')){
+            return 'Data';
+        }
+        else {
+            return 'Home';
+        }
+    },
+    // If viewing an Answer or Liveboard, returns the GUID of that object from the parsed URL
+    get objectId() {
+        let pathParts = this.currentPath.split('/');
+        // '/saved-answer/' is path for Answers (vs. /answer/)
+        if (this.currentPath.includes('/saved-answer/')){
+            answerGUID = pathParts[2];
+            return pathParts[2];
+        }
+        // '/pinboard/' is path for saved Liveboards
+        else if (this.currentPath.includes('/pinboard/')){
+            let pathParts = this.currentPath.split('/');
+            // May need adjustment for tabbed views to add in current Tab
+            liveboardGUID = pathParts[2];
+            return pathParts[2];
+        }
+        else{
+            return null;
+        }
+    }
+
+}
+
+/*
+* Keeping track of what is actually showing in the Full App Embed component requires parsing the RouteChanged event
+*/
+let answerGUID = '';
+let liveboardGUID = '';
+let objectGUID = null; // Store whatever object ID is (whatever the type) from URL parsing
+
+/*
+* Create the actual AppEmbed component. 
+* This does not render anything (must call the .render() method later, after event listeners are defined)
+*/
+const embed = new AppEmbed("#embed", {
+    pageId: startPath,
+    // path: '/path/to/page',  // Alternative direct path rather than pageId
+    showPrimaryNavbar: true, // You can make your own navbar using the pageIds, but useful to turn on for testing
+    frameParams: {
+        height: '100%',
+        width: '100%'
+    },
+
+    disabledActions: [],
+    disabledActionReason: "Reason for disabling",
+    hiddenActions: []
+     //frameParams : { width: '500px', height: '250px'},
+     //defaultHeight: '1000px'
+     //fullHeight: false
+});
+
+/*
+* Generic function to make a call to the V2.0 REST API 
+* 
+*/
+async function restApiCallV2(endpoint, httpVerb, apiRequestObject){
+    const publicApiUrl = 'api/rest/2.0/';
+    console.log("hitting endpoint " + endpoint + " with verb " + httpVerb + " and request:");
+    console.log(apiRequestObject);
+    const apiFullEndpoint = tsHost + "/" + publicApiUrl + endpoint;
+    // Check for APIs with batching
+    if ('record_offset' in apiRequestObject){
+        console.log("This API request has record_offset property")
+    }
+
+    return await fetch(
+        apiFullEndpoint, 
+        {
+            method: httpVerb.toUpperCase(),
+            headers: {
+                "Accept": "application/json",
+                "X-Requested-By": "ThoughtSpot",
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify(apiRequestObject)
+        })
+    // is there always response JSON?
+    .then(response =>  response.json())
+    .catch(error => {
+        console.error("Unable to get the" + endpoint + "response: " + error);
+    });
+}
+
+// Easy type names match ThoughtSpot UI names for objects
+const typesToApiTypeV2 = {
+    'liveboard': 'LIVEBOARD',
+    'answer': 'ANSWER',
+    'datasource' : 'LOGICAL_TABLE', // datasource doesn't distinguish sub-types
+}
+
+
+/*
+* A bunch of example UI tie-ins for the various events in the loading process (pre-load, errors, cookie settings, etc)
+*/
+hideNoDataImage();
+
+function showSSOFailedMsg(){
+    let loadMsgElement = document.getElementById('loaderMsg');
+    loadMsgElement.innerText = 'Sign-in failed, nothing for you!';
+}
+
+function tsSessionTimeoutCleanup(){
+    let tsEmbedDiv = document.getElementById('embed');
+    tsEmbedDiv.style.display = 'none';
+}
+
+function showCookieSettingsMsg(){
+
+}
+
+function showGenericErrorMsg(response){
+    console.log('Error event fires');
+    console.log(response);
+}
+
+// Functions to show and hide a loader while iframe loads
+function showLoader(response) {
+  document.getElementById("loader").style.display = "block";
+  console.log("Init event fires");
+  console.log("Loader is being shown");
+  console.log(response);
+}
+
+function hideLoader(response) {
+  document.getElementById("loader").style.display = "none";
+  console.log("Load event fires");
+  console.log('Loader is being hidden');
+  //console.log(response);
+  let embedDiv = document.getElementById('embed');
+  embedDiv.style.opacity = '100%';
+  // Added button
+  //document.getElementById("floatingButton").style.display = 'block';
+  //embedDiv.style.width = '800px';
+  // exampleRestApiCall();
+}
+
+// Functions to show or hide No data images
+
+function showNoDataImage() {
+  document.getElementById("no-data").style.display = "block";
+}
+function hideNoDataImage() {
+  document.getElementById("no-data").style.display = "none";
+}
+
+/*
+* End UI tie-in fuctions
+*/
+
+let tsLoggedIn = false;
+
+
+
+// userGUID comes through from the EmbedEvent.AuthInit and will be set then, but then should be global
+let userGUID = '';
+let dsGUIDs = [];
+
+/*
+* Event listeners are attached to the Embed component to tie together ThoughtSpot component actions with outer embedding app
+* The following attaches various EmbedEvent listeners
+* Overview article: https://developers.thoughtspot.com/docs/?pageid=events-app-integration
+* Full reference for all events: https://developers.thoughtspot.com/docs/?pageid=events 
+*/
+embed
+    .on(EmbedEvent.ALL, (response) => {
+            //console.log('ALL event fires');
+            //console.log(response);
+    })
+    .on(EmbedEvent.Init, showLoader)
+    .on(EmbedEvent.NoCookieAccess, showCookieSettingsMsg)
+    .on(EmbedEvent.AuthInit, (response) => {
+        console.log('AuthInit event fires');
+        console.log(response);
+        // Set that AuthInit has fired
+        tsLoggedIn = true;
+        // authInit returns object -> {type: 'authInit', data: {userGuid: <guid>} } }
+        userGUID = response.data.userGUID;
+        hideLoader();
+    } )
+    .on(EmbedEvent.AuthExpire, (response) => {
+        console.log('AuthExpire event fires');
+        console.log(response);
+        // Handle if session dies while content shows
+        if (tsLoggedIn == true){
+            tsSessionTimeoutCleanup();
+        }
+        else {
+            // Display custom message if SSO issues
+            showSSOFailedMsg();
+        }
+    } )
+    .on(EmbedEvent.Error, showGenericErrorMsg)
+    /*param-start-customActionHandle*//*param-end-customActionHandle*/
+    .on(EmbedEvent.Alert, (response) => {
+        console.log("Alert event fires");
+        console.log(response);
+    })
+    // Fires when there is a change within FullApp, can be used to update a variable in the URL, for bookmarking
+    .on(EmbedEvent.RouteChange, (response) => {
+        // console.log("RouteChange fires");
+        // console.log(response);
+        // Updated tsAppState object currentPath property
+        // Other calls call to tsAppState for detecting the page, object type, GUIDs etc.
+        tsAppState.currentPath = response.data.currentPath;
+        tsAppState.currentDatasources = []; // Reset until you find out 
+        console.log("TS App page is now: ", tsAppState.currentPath);
+        if (tsAppState.objectId != null) {
+            console.log("Showing a " + tsAppState.pageType + " with Id", tsAppState.objectId)
+        }
+        else {
+            console.log("Showing page " + tsAppState.pageType);
+        }
+
+    })
+    // Fires on Search or Answer when the data source selector UI is activated by an end user
+    .on(EmbedEvent.DataSourceSelected, (response) => {
+        console.log('DataSourceSelected event fires');
+        console.log(response);
+        let dataSources = response.data;
+        
+        if (dataSources.length === 0){
+            console.log("No data sources have been selected");
+        }
+        else{
+            console.log("Selected Data Sources: ");
+            console.log(dataSources);
+            tsAppState.currentDatasources = dataSources;
+        }
+    } )
+    // Can be used to detect when visual is ready to display, not that important in a Full App embed
+    .on(EmbedEvent.Data, (response) => {
+        console.log('Data event fires');
+        console.log(response);
+    } )
+    // Fires only on Search/Answer view
+    .on(EmbedEvent.QueryChanged, (response) => {
+        console.log('QueryChanged event fires');
+        console.log(response);
+        // You could trigger the HostEvent.GetTML here
+        // to get the current TML Search String of a SearchEmbed component
+        // This event does not fire off in a Liveboard currently
+    } )
+    // Listener for various Custom Actions triggered from within ThoughtSpot from menus by user
+    .on(EmbedEvent.CustomAction, (response) => {
+        console.log('CustomAction event fires');
+        console.log(response);
+        const customActionData = response.data;
+
+        let user;
+
+        // In this example, we are trying to get the TML Search String of the selected viz
+        let vizTmlSearchString;
+
+        // Detect which type of Custom Action has triggered, Menu (all points) or Context Menu (single point)
+        let isContextMenu = false;
+        if('contextMenuPoints' in customActionData){
+            isContextMenu = true;
+        }
+
+        // console.log("Current app state: ", tsAppState);
+
+        // Different Custom Actions will have different IDs, you can distinguish via response.id: 
+        // if (customActionData.id === 'tag'){}
+
+        // Below will respond to any Custom Action that is triggered, wrap in an IF clause with id detection later
+
+        // Split actions depending on type of object that is triggering the Custom Action
+
+        if(tsAppState.pageType == 'answer' || tsAppState.pageType == 'Search'){
+            // Answer/Search has HostEvent.GetTML() that returns the TML Search String for current state
+            if(isContextMenu == true){
+                // You might detect any Selection / Context Menu conversion for additional filtering here
+            }
+
+             getCurrentTmlSearchString().then( vizTmlSearchString => { 
+                console.log("Final vizTmlSearchString to be used with Search Data API: ", vizTmlSearchString);
+                modal.style.display = "block";
+                callSearchDataApi(vizTmlSearchString, tsAppState.currentDatasources[0]);
+             });
+            // Possibly add in filters created from selection
+
+        }
+        else if (tsAppState.pageType == 'liveboard'){
+            // Liveboards have several layers of filtering and do not return anything currently from GetTML
+            // It is possible to composite together the Search String of a Viz from the TML endpoint
+            // with the other filter components converted into TML Search String language
+            let actionData;
+            let liveboardFiltersToConvert = [];
+            let selectionFiltersToConvert = [];
+            // On a Liveboard, must determine the viz_id of the component triggering the Custom Action
+            let vizId;
+            
+            
+            actionData = customActionData.embedAnswerData; // Inner object with all the real details returned
+            // User information (if you don't have otherwise)
+            user = actionData.user;
+            // Additional user properties to parse out
+            // tsUsername = user.userName;
+            // tsUserGuid = user.userGUID;
+            // tsUserEmail = user.userEmail;
+            // This is actual vizId that shows up in TML and metadata APIs for given viz
+            if (actionData.vizId){
+                vizId = actionData.vizId;
+            }
+            else{
+                vizId = customActionData.vizId;
+            }
+            console.log('actionData is', actionData);
+            console.log('vizId is: ' + vizId);
+
+            // Context Menu Custom Actions happen on a single point
+            if(isContextMenu == true){
+                // This may change a bit with updates to provide more metadata
+                let points = customActionData.contextMenuPoints;
+                actionData = customActionData.embedAnswerData;
+                console.log("Custom Action from Context Menu on this set of points", points);
+
+                // There are two objects inside, clickedPoint and selectedPoints. They both appear to be the same, selectedPoints is array of length 1
+                // Within either of the objects, the values that make up the selection are split into:
+                let selectedAttributes = points.selectedPoints[0].selectedAttributes;
+                let selectedMeasures = points.selectedPoints[0].selectedMeasures;
+                console.log(selectedAttributes);
+                // deselectedAttributes and Measures have values when selected a single cell from a Table view
+                // the other cells are respresented in the deselected buckets
+                let deselectedAttributes = points.selectedPoints[0].deselectedAttributes;
+                console.log(deselectedAttributes);
+                let deselectedMeasures = points.selectedPoints[0].deselectedMeasures;
+
+                // In this example, we are trying to convert the selections into the equivalent filters to recreate 
+                // the effect of a drilldown or show underlying data on that point
+                selectionFiltersToConvert = parseSelectedPointsForFilters(points);
+            }
+            // Regular Menu Custom Action. Currently has more metadata than Context Menu (but should change, more can move to top for both)
+
+                
+            // Liveboard filter information (will parse further). Array of objects
+            let filters = actionData.filterGroups;
+            console.log("Liveboard Filters from action response:")
+            console.log(filters);
+            
+            // We'll grab out the essentials necessary to convert the filter into TML Search Query language
+            if(filters != null){
+                liveboardFiltersToConvert = parseLiveboardFiltersForFilters(filters);
+                console.log("parsed lbFilters: ", liveboardFiltersToConvert);
+            }
+
+
+            // Viz column metadata (array of column objects)
+            // Data response only gives you the column ID, if you want the field name you can find Id and Name here
+            // let vColumns = actionData.columns;
+            // Viz data (actual current state of visible points). Array of objects
+            // let vColumnData = actionData.data[0].columnDataLite;
+            // Each columnDataLite object has a .dataValue property, which is the Array of the actual values
+            // Data is returned Columnar, but each column has same length (they represent rows but aren't returned as such, for visualization purposes)
+            // You can recreate the Rows of data by iterating through one column and adding in the values from other columns at same index 
+
+            // Display a modal dialog box
+            modal.style.display = "block";
+            console.log("About to build the Viz TML from the parts:");
+            
+            // Call to function that contains all of the TML requests and adjustments for the Selection and Filter, returning back final vizTmlSearchString to be sent to Search Data API
+            buildCurrentVizOnLiveboardTML(tsAppState.objectId, vizId, liveboardFiltersToConvert, [], selectionFiltersToConvert).then( 
+                vizTmlSearchString => { 
+                    console.log("Final vizTmlSearchString to be used with Search Data API: ", vizTmlSearchString);
+                    modal.style.display = "block";
+                    // Last two arguments are offset and record size
+                    // It is possible that you have more records than the recordSize, and need to go through and get all of them
+                    async function getAllSearch(){
+                        let allResults = [];
+                        let resultCount = 0;
+                        let recordSize = 300; // Set this to 10000 in all production cases, it is set LOW to see the iteration working
+                        let offset = 0;
+                        let searchResult = await callSearchDataApi(vizTmlSearchString, tsAppState.currentDatasources[0], offset, recordSize);
+                        console.log("Got the searchResult: ", searchResult);
+                        //let tmlObject = JSON.parse(response[0].edoc);
+                        //console.log(tmlObject);
+                        allResults.push(searchResult);
+                        resultCount = searchResult['contents'][0]['returned_data_row_count'];
+                        // let recordSize = searchResult['contents'][0]['record_size']
+                        console.log("This many records returned " + resultCount);
+                        while (resultCount == recordSize) {
+                            console.log('Need another batch');
+                            offset += recordSize;
+                            searchResult = await callSearchDataApi(vizTmlSearchString, tsAppState.currentDatasources[0], offset, recordSize);
+                            allResults.push(searchResult);
+                            resultCount = searchResult['contents'][0]['returned_data_row_count'];
+                        }
+
+                        console.log(allResults);
+                    }
+                // Call the async function from directly above to do the full search
+                getAllSearch();
+                
+             });
+        }
+    } )
+    // Listener for VizPointClick event (equivalent of Context Menu Custom Action without menu selection)
+    .on(EmbedEvent.VizPointClick, (response) => {
+        console.log('VizPointClick event fires');
+        console.log(response);
+        // Split actions depending on type of object that is triggering the Custom Action
+        if(tsAppState.pageType == 'answer' || tsAppState.pageType == 'Search'){
+            vizTmlSearchString = getCurrentTmlSearchString();
+            // Possibly add in filters created from selection
+        }
+        else if (tsAppState.pageType == 'liveboard'){
+            const customActionData = response.data; // Named the same as code above, since relatively is same as ContextMenu Custom Action response
+        }
+    })
+    // Drilldown event may change the state of a given viz. In SearchEmbed, GetTML will be updated
+    // on a Liveboard, you may want to consider if Drilldown has fire to know what to respond with
+    .on(EmbedEvent.Drilldown, (response) => {
+        console.log('Drilldown event fires');
+    })
+    // Renders the FullApp embed after all event listeners are attached
+    .render()
+    
+
+
+
+/*
+* Functions for use in the Custom Action Event Listener above - START
+*/
+
+/* 
+ * On Search/Answer, use HostEvent.GetTML to get exact equivalent of the TML Search String for the current state
+ * Liveboards require a different, more complete process
+*/
+function getCurrentTmlSearchString(){
+    console.log('Triggering HostEvent.GetTML');
+    // Currently because only Search/Answer has HostEvent.GetTML
+    if (tsAppState.pageType == 'answer' || tsAppState.pageType == 'Search'){
+        return embed.trigger(HostEvent.GetTML).then( (response) => {
+            console.log('GetTML returns:');
+            console.log(response);
+            console.log('TML Search String:');
+            let tmlSearchQuery = response.answer.search_query;
+            console.log(tmlSearchQuery);
+            return tmlSearchQuery;
+        });
+    }
+
+}
+
+
+/*
+* Parse selection event and return the essential elements of the response for conversion to filters
+*/ 
+function parseSelectedPointsForFilters(points){
+    // Within either of the objects, the values that make up the selection are split into:
+    let selectedAttributes = points.selectedPoints[0].selectedAttributes;
+    let selectedMeasures = points.selectedPoints[0].selectedMeasures;
+    // console.log(selectedAttributes);
+
+    // deselectedAttributes and Measures have values when selected a single cell from a Table view
+    // the other cells are respresented in the deselected buckets
+    let deselectedAttributes = points.selectedPoints[0].deselectedAttributes;
+    // console.log(deselectedAttributes);
+    let deselectedMeasures = points.selectedPoints[0].deselectedMeasures;
+
+    // Measures will have an aggregationType property in the column attributes, Attributes have it set to "NONE"
+
+    let liveboardFiltersToConvert = [];
+
+    // Because the details are split 4 ways, make an array of which ones to parse through
+    // At minimum we want to grab all Attributes and convert them into filtering clauses
+    // Unclear if you would do the same for Measures, because they will be aggregated at the level of detail
+    let objectsToParse = [selectedAttributes, deselectedAttributes]; // possibly add in Measures later?
+    // console.log(objectsToParse);
+    // Run through each of the selection objects in the list
+
+    let selectionFiltersToConvert = [];
+    for (let k = 0, l = objectsToParse.length; k<l; k++){
+        let o = objectsToParse[k];
+        // Each column of attributes/measures will be an object with a number of data and metadata properties
+        // We're just pulling out what is essential to convert it into a Filter, but if you have other purposes
+        // you can pull out additional properties and send them into the 
+        for(let i = 0, len = o.length; i<len; i++){
+            let sFieldName = o[i].column.referencedColumns[0].displayName;
+            let sDataType = o[i].column.dataType;
+            let sTimeBucket = o[i].column.timeBucket;
+            let val = o[i].value;
+            // The conversion function will need to look for these attributes to build from
+            let filterParts = {
+                    'fieldName': sFieldName,
+                    'dataType': sDataType,
+                    'operator': 'EQ',
+                    'values': [val],
+                    'timeBucket': sTimeBucket
+                }
+                selectionFiltersToConvert.push(filterParts);
+        }
+    }
+    console.log("Filters to be generated from selection: ");
+    console.log(selectionFiltersToConvert);
+    return selectionFiltersToConvert;
+}
+
+
+/*
+ * Process Liveboard Filters details that come in from Custom Action Response
+*/
+function parseLiveboardFiltersForFilters(filters){
+    let liveboardFiltersToConvert = [];
+        for(let i = 0, len = filters.length; i<len; i++){
+            let fDataType = filters[i].columnInfo.dataType;
+            // let fFieldName = filters[i].columnInfo.name;
+            let fFieldName = filters[i].columnInfo.referencedColumns[0].displayName;
+            let fType = filters[i].columnInfo.type; // Appears to be 'ATTRIBUTE' or 'MEASURE'
+            let fFilterDetails = filters[i].filters[0].filterContent[0]; 
+            let fFilterOperator = fFilterDetails.filterType;
+            let fFilterNegate =  fFilterDetails.negate;
+            // IN or EQ + negate: true represents Not Equals / != operator
+            // Defining an 'NE' value for 'operator' to represent this Not Equals condition further down the line 
+            if(fFilterNegate == true){
+                if (fFilterOperator == 'IN' || fFilterOperator == 'EQ'){
+                    fFilterOperator = 'NE';
+                }
+            }
+            
+            let fFilterTimeBucket = filters[i].columnInfo.timeBucket;
+            let filterValues = [];
+            // fFilterDetails.value is array of objects, where the .key key gets you the actual values
+            for(let k = 0, len2 = fFilterDetails.value.length; k<len2; k++){
+                filterValues.push(fFilterDetails.value[k].key);
+            }
+        // console.log('Found Liveboard filter with following properties:')
+        // console.log("Filter of: ", fFieldName, fDataType, fFilterOperator, fFilterTimeBucket);
+        // console.log("Values:", filterValues);
+
+            let filterParts = {
+                'fieldName': fFieldName,
+                'dataType': fDataType,
+                'operator': fFilterOperator,
+                'values': filterValues,
+                'timeBucket': fFilterTimeBucket
+        }
+        liveboardFiltersToConvert.push(filterParts);
+    }
+    console.log("Liveboard Filters found: ");
+    console.log(liveboardFiltersToConvert);
+    return liveboardFiltersToConvert;
+}
+
+/*
+* Generic function to convert the various Liveboard filter types into their equivalent in TML Search String language
+* Undoubtedly needs additonal testing and improvements to handle all use cases
+*/
+function convertLiveboardFilterToTmlSearch(fieldName, dataType, operator, values, timeBucket){
+    let filterString = "";
+    
+    // luxon.js DateTime object 
+    luxon.Settings.defaultZoneName = "utc";
+    let DateTime = luxon.DateTime;
+    // Full Date format is MM/DD/YYYY
+    // ThoughtSpot dates always have 2-digit for month and day, this is Luxon specific
+    let tsDateFormat = {...DateTime.DATE_SHORT, day: '2-digit', month: '2-digit' };
+
+    // Map of the various operators from the event responses to their equivalent in TML Search String language
+    let numericOperatorMap = {
+        "GT" : ">"
+        ,"LT" : "<"
+        ,"LE" : "<="
+        ,"GE" : ">="
+        ,"CONTAINS": "contains"
+        ,"BEGINS_WITH": "begins with"
+        ,"ENDS_WITH": "ends with"
+        ,"BW" : ["between"]
+        ,"BW_INC_MIN" : ["between"]
+        //,"BW_INC_MIN": [">=", "<"]
+        ,"BW_INC_MAX": [">", "<="]
+        , "BW_INC": ["between"]
+    }
+
+    // Exact equality is simple, except for Time Buckets, which need 
+    if(operator == "EQ" || operator == 'IN'){
+        // Dates have formats / timeBuckets and a different format for direct equality filtering - [Field Name]."formattedTimePart"
+        /*
+        * Dates from a Selection where the time axis is rolled up to a Time Bucket (Yearly, Quarterly, Monthly, Weekly)
+        * Will come in as a single value but need to have the correct END DATE calculated to create
+        * a Between clause (inclusive) in TML Search String language
+        */
+
+        if (dataType == 'DATE'){
+            let dtStrStart;
+            let dtStrEnd; // Create end date from the start date
+            let date1 = new Date(values[0] * 1000);
+            console.log("DATE type filter with timeBucket: ", date1, timeBucket);
+            
+            let dt1 = DateTime.fromJSDate(date1, {'zone': 'utc'});
+            dtStrStart = dt1.toLocaleString(tsDateFormat);
+
+            switch(timeBucket){
+                case 'WEEKLY':
+                    // Add a week then subtract a day (BETWEEN is INCLUSIVE)
+                    dtStrEnd = dt1.plus({ weeks: 1 }).plus({ days: -1 }).toLocaleString(tsDateFormat);
+                    break;
+                case 'MONTHLY':
+                    // Add a month then subtract a day (BETWEEN is INCLUSIVE)
+                    dtStrEnd = dt1.plus({ months: 1 }).plus({ days: -1 }).toLocaleString(tsDateFormat);
+                    break;
+                case 'QUARTERLY':
+                    // Add 3 months then subtract a day (BETWEEN is INCLUSIVE)
+                    dtStrEnd = dt1.plus({ months: 3 }).plus({ days: -1 }).toLocaleString(tsDateFormat);
+                    break;
+                case 'YEARLY':
+                    // Add a year then subtract a day (BETWEEN is INCLUSIVE)
+                    dtStrEnd = dt1.plus({ years: 1 }).plus({ days: -1 }).toLocaleString(tsDateFormat);
+                    break;
+                default:
+                    dtStrEnd = null;
+            }
+            
+            // Create the filter clause depending on if there is a time bucket or not
+            if(dtStrEnd === null){
+                //filterString += "[" + fieldName + "]." + dtStrStart;
+                filterString = `[${fieldName}].${dtStrStart}`;
+            }
+            else{
+                //filterString +=  "[" + fieldName + "] between " + "[" + fieldName + "]." + dtStrStart + " and " + "[" + fieldName + "]." + dtStrEnd;
+                filterString =  `[${fieldName}] between [${fieldName}].${dtStrStart} and [${fieldName}].${dtStrEnd}`;
+            }
+        }
+
+        // When filtering multiple values for the same field, there is a particular syntax with much repetition
+        else {
+            let wrappedFilterValues = [];
+            for(let k = 0, len = values.length; k<len; k++){
+                if (values[k] == null){
+                    wrappedFilterValues.push('{null}');
+                }
+                // If there is a single quote, you can use double quotes around but they must be escaped with \
+                else if (values[k].includes("'")){
+                        wrappedFilterValues.push('\"' + values[k] + '\"');
+                }
+                else {
+                    wrappedFilterValues.push("'" + values[k] + "'");
+                }
+                
+            }
+            // console.log(wrappedFilterValues);
+            let valuesString = wrappedFilterValues.join(',');
+            // filterString += "[" + fieldName + "] = " + valuesString + " ";
+            filterString += `[${fieldName}] = ${valuesString} `;
+        }
+    }
+    
+    // 'NE' operator was created in the filter parser from IN/EQ and negate : true
+    if(operator == "NE"){
+        // The != syntax for multiple values appears to simply have each value in order like "[Store Type] != [Store Type].large [Store Type].Small"
+        if (values[0] == null){
+            filterString = `[${fieldName}] != [${fieldName}].{null}`;
+        }
+        else {
+            filterString = `[${fieldName}] != [${fieldName}].'${values[0]}'`;
+        }
+        // Append any after the first value
+        for(let k = 1, len = values.length; k<len; k++){
+            if (values[k] == null){
+                filterString += ` [${fieldName}].{null}`;
+            }
+            else{
+                filterString += ` [${fieldName}].'${values[k]}'`;
+            }
+        }
+    }
+    
+    /*
+    * Dates from a Selection where the time axis is rolled up to a Time Bucket (Yearly, Quarterly, Monthly, Weekly)
+    * Will come in as a single value but need to have the correct END DATE calculated to create
+    * a Between clause (inclusive) in TML Search String language
+    */
+
+    if (operator in numericOperatorMap){
+        if (values.length == 1){
+            //filterString += "[" + fieldName + "] " + numericOperatorMap[operator] + " " + values[0];
+            filterString = `[${fieldName}] ${numericOperatorMap[operator]} ${values[0]}`;
+        }
+        else if (values.length == 2){
+            let val1 = values[0];
+            let val2 = values[1];
+            if (dataType == 'DATE'){
+                    let date1 = new Date(values[0] * 1000);
+                    let date2 = new Date(values[1] * 1000);
+                    console.log("DATE type filter with start and end on timeBucket: ", date1, date2, timeBucket);
+                    
+                    let dt1 = DateTime.fromJSDate(date1, {'zone': 'utc'});
+                    val1 = dt1.toLocaleString(tsDateFormat);
+                    let dt2 = DateTime.fromJSDate(date2, {'zone': 'utc'});
+                    val2 = dt2.toLocaleString(tsDateFormat);
+                    
+                    // Date format is MM/DD/YYYY
+                    //val1 = date1.toLocaleDateString('en-US', { timeZone: 'UTC', year: "numeric", month: '2-digit', day: '2-digit' });
+                    //val2 = date2.toLocaleDateString('en-US', { timeZone: 'UTC', year: "numeric", month: '2-digit', day: '2-digit' });
+                }
+            
+            // BETWEEN
+            if (numericOperatorMap[operator].length == 1 ){ 
+                //filterString += "[" + fieldName + "] " + numericOperatorMap[operator][0] + " " + "[" + fieldName + "]." + val1 + " and " + "[" + fieldName + "]." + val2;
+                filterString += `[${fieldName}] ${numericOperatorMap[operator][0]} [${fieldName}].${val1} and [${fieldName}].${val2}`;
+            }
+            // BW_INC_MAX
+            else if (numericOperatorMap[operator].length == 2 ){
+                //filterString += "[" + fieldName + "] " + numericOperatorMap[operator][0] + " " + val1 + " " + "[" + fieldName + "] " + numericOperatorMap[operator][1] + " " + val2;
+                filterString += `[${fieldName}] ${numericOperatorMap[operator][0]} ${val1} [${fieldName}] ${numericOperatorMap[operator][1]} ${val2}`;
+            }
+        }
+
+    }
+    console.log("Generating filter string: ", filterString);
+    return filterString;
+}
+
+
+/*
+* Liveboards require a complex process of requesting their saved TML, then looking current state of Liveboard Filters, runtime filters (not implemented), and
+* details from the Selection if it is a Context Menu Custom Action, to generate the "equivalent TML" of what the user is seeing at that moment
+* There are various other situations that may also break things: Explore, Edit, Drilldown, and Formulas defined in a visualization rather than a Worksheet.
+* Parameters are newer feature that do not have obvious path to get their current values and send in API request - may need updates eventually
+*/
+function buildCurrentVizOnLiveboardTML(liveboardId, vizId, lbFilters, runtimeFilters, selectionDetails){
+        /*
+        * TML from a Viz on a Liveboard must do the following:
+        * 1. Get the TML of the Liveboard using liveboardId, choose API option to export with FQNs
+        * 2. Find the answer object within the Liveboard TML with the matching viz_id property to the passed in vizId
+        * 3. From TML, grab the tables: property to get the FQN (GUID) of the Datasource 
+        * 4. From TML, grab the search_query property from the TML
+        * 5. From Custom Action Response, grab the Liveboard filters
+        * 6. From Custom Action Response, grab the Selection Details
+        * 7. Add all Selection Details, and any Liveboard Filters that do not conflict with selection, to create Final Filters
+        * 8. Look at Final Filters, and remove any conflicting filter claues from the TML Search String
+        * 9. Convert Final Filters into TML Filter Clauses and add them to create Final TML Search String
+        * 10. Append any additional fields to always be included on the TML Search String
+        * 11. Issue Search Data REST API call using the Final TML Search STring
+        */
+
+        // 1. Get the TML of the Liveboard using liveboardId, choose API option to export with FQNs
+        console.log("Requesting TML for: ", liveboardId, vizId);
+        let tmlRequestOptions = {
+            guid: liveboardId, 
+            objectType: "liveboard", 
+            exportAssociated: false, 
+            exportFQN: true
+        }
+
+        let tmlExportEndpoint = 'metadata/tml/export';
+        let apiRequestForTML = { 
+            "metadata" : [{ 
+                "type": "LIVEBOARD", 
+                "identifier": liveboardId
+            }],
+            "export_associated": false,
+            "export_fqn": true
+
+        }
+
+        // Place call to export the TML for the Liveboard, to get the details of the Viz
+        return restApiCallV2(tmlExportEndpoint, 'POST', apiRequestForTML).then(
+        //tmlExportRestApiCallV2(tmlRequestOptions).then(
+            response => {
+                // console.log(response);
+                let tmlObject = JSON.parse(response[0].edoc);
+                // console.log(tmlObject);
+                return tmlObject;
+            }
+        ).then( tmlObject => {
+            let vizes = tmlObject.liveboard.visualizations;
+            let selectedViz;
+            // 2. Find the answer object within the Liveboard TML with the matching viz_id property to the passed in vizId 
+            console.log('Looking for '+ vizId);
+            for(let i = 0, len = vizes.length; i<len; i++){
+                console.log(vizes[i]);
+                
+                if (vizes[i].viz_guid == vizId){
+                    // console.log("Found match for ", vizId);
+                    selectedViz = vizes[i];
+                    console.log("Selected viz will now be: ", selectedViz);
+                    break;
+                }
+            }
+            // console.log("Matching Viz info is: ");
+            // console.log(selectedViz);
+
+            // 3. Grab the tables: property to get the FQN (GUID) of the Datasource 
+            let vizTable = selectedViz.answer.tables[0];
+            console.log("Viz Data Source info: ", vizTable);
+            // Update the App State with the data source of the Viz
+            tsAppState.currentDatasources = [vizTable.fqn];
+
+            // 4. Grab the search_query property
+            let vizTmlSearchString = selectedViz.answer.search_query;
+            console.log("TML Search String for Viz from saved TML: ", vizTmlSearchString);
+
+            // 5. and 6. Liveboard Filters and Selection Details are passed into this function as arguments lbFilters and selectionDetails respectively
+
+            // 7. Add all Selection Details, and any Liveboard Filters that do not conflict with selection, to create Final Filters
+            let finalFilters = [];
+            let finalFilterFields = [];
+            console.log('lbFilters right now: ', lbFilters);
+            console.log("selectionDetails right now", selectionDetails);
+            
+            // Add in the SelectionDetails as filters
+            // SelectionDetails always override Liveboard Filters
+            if(selectionDetails !== null){
+                for(let k = 0, l = selectionDetails.length; k<l; k++){
+                    finalFilters.push(selectionDetails[k]);
+                    finalFilterFields.push(selectionDetails[k].fieldName);
+                }
+            }
+
+            // Add in any Liveboard filters that haven't been added already
+            if (lbFilters !== null){
+                for(let i = 0, len = lbFilters.length; i<len; i++){
+                    let fieldName = lbFilters[i].fieldName;
+                    if (!finalFilterFields.includes(fieldName)){
+                        finalFilters.push(lbFilters[i]);
+                    }
+                }
+            }
+
+            console.log('Final combined filters', finalFilters)
+            
+            // 8. Look at Final Filters, and remove any conflicting filter claues from the TML Search String
+
+            /*
+            * Filter clauses on the same Field in TML Search String language are all processed as ORs in SQL
+            * which makes the least restrictive clause win out in the eventual query
+            * The saved TML from the Liveboard may have filter clauses on the same fields used in
+            * Liveboard filters or the Selected Point used in the Context Menu action.
+            * To get around this, we create Regular Expressions to remove any Filtering clauses on those fields
+            * from the underlying TML Search String, before appending the generated final Filter Clauses
+            */
+
+            // console.log('Attempting to remove any contradictory filters from underlying TML');
+            // console.log("vizTmlSearchString at current time: ", vizTmlSearchString);
+
+            function reReplace(re, tmlString){
+                console.log('reReplace called with', re, tmlString);
+                let updatedTml;
+                for (let match of tmlString.matchAll(re)) {
+                    console.log("Match found for pattern: ", re);
+                    console.log(match);
+                    updatedTml = tmlString.replace(re, "");
+                    console.log("Updated TML after replacement: ", updatedTml);
+                    // Replace with the clause removed
+                 
+                    tmlString = updatedTml;
+                }
+                return tmlString;
+            }
+
+            for(let i=0, len = finalFilters.length; i<len; i++){
+                let filterFieldName = finalFilters[i].fieldName;
+                let filterFieldType = finalFilters[i].dataType;
+                let filterFieldNameBrackets = '[' + filterFieldName + ']';
+                let filterFieldNameRegex = '\\[' + filterFieldName + '\\]';
+                let updatedTml;
+
+                /* There are 4 TML filter clause types that we are searching and nulling out. Possibly more might be discovered and added */
+
+                // 'between' clause
+                let betweenRE = filterFieldNameRegex + " between.*and " + filterFieldNameRegex + "\\S*(\\s|$)"; 
+                const reBetween = new RegExp(betweenRE, "g");
+                vizTmlSearchString = reReplace(reBetween, vizTmlSearchString);
+
+                // >= for time is 'on or after' , < is 'before'
+                let onOrAfterBeforeRE = filterFieldNameRegex + " (on or after|before) \\S*(\\s|$)"; 
+                const reOnOrAfterBefore = new RegExp(onOrAfterBeforeRE, "g");
+                vizTmlSearchString = reReplace(reOnOrAfterBefore, vizTmlSearchString);
+
+                
+                // Numeric 'Comparison Operator' clauses (or do you need extra rule for TIME)                
+                let operatorsRE = filterFieldNameRegex + "\\s(>=|>|<|>=|<=)\\s\\S*";
+                const reOperators = new RegExp(operatorsRE, "g");
+                vizTmlSearchString = reReplace(reOperators, vizTmlSearchString);                
+               
+                // 'Not Equal Operator' clause for list (first half) (these look like [Field] != [Field].value1 [Field].value2 )
+                let neRE = filterFieldNameRegex + "\\s(=|!=)\\s\\[";
+                const reNE = new RegExp(neRE, "g");
+                let neREMatchCount = 0;
+
+                // String files are are wrapped in single quotes if they have spaces, needs this pattern
+                let notEqualSingleQuoteRe = filterFieldNameRegex + " (=|!=)\\s'.*?'\\s";
+                const reNotEqualSQ = new RegExp(notEqualSingleQuoteRe, "g");
+                vizTmlSearchString = reReplace(reNotEqualSQ, vizTmlSearchString);    
+
+                // Pattern for when not wrapped in single quotes (numeric fields used as categorical filters, or strings with no spaces)
+                let notEqualRe = filterFieldNameRegex + " (=|!=)\\s\\S*";
+                const reNotEqual = new RegExp(notEqualRe, "g");
+
+                for (let match of vizTmlSearchString.matchAll(reNE)) {
+                    console.log("Match found for reNE pattern: ", reNE);
+                    console.log(match);
+                    // The Regex grabs all the way through the [ of the following caluse, so we replace it. If I were better at RegEx I'm sure another way
+                    updatedTml = vizTmlSearchString.replace(reNE, "[");
+                    console.log("Updated TML after replacement: ", updatedTml);
+                    // Replace with the clause removed
+                    vizTmlSearchString = updatedTml;
+                    neREMatchCount++;
+                
+                }
+
+                 // 'Not Equal Operator' clause if by itself (these look like [Field] != value)
+                if (neREMatchCount == 0){
+                    for (let match of vizTmlSearchString.matchAll(reNotEqual)) {
+                        console.log("Match found for reNotEql pattern: ", reNotEqual);
+                        console.log(match);
+                        
+                        updatedTml = vizTmlSearchString.replace(reNotEqual, "");
+                        console.log("Updated TML after replacement: ", updatedTml);
+                        // Replace with the clause removed
+                        vizTmlSearchString = updatedTml;
+                        
+                    }
+                }
+
+                // 'Dot operator' clauses for dimension assignment (more typical than '='). two variations - wrapped in single quotes and without
+                let dotDoubleQuoteRE = filterFieldNameRegex + "\\.\".*\\b\"";
+                let dotSingleQuoteRE = filterFieldNameRegex + "\\.'.*\\b'";
+                let dotNoQuoteRE = filterFieldNameRegex + "\\.\\S*";
+
+                const reDotDoubleQuote = new RegExp(dotDoubleQuoteRE, "g");
+                vizTmlSearchString = reReplace(reDotDoubleQuote, vizTmlSearchString);
+
+                const reDotSingleQuote = new RegExp(dotSingleQuoteRE, "g");
+                vizTmlSearchString = reReplace(reDotSingleQuote, vizTmlSearchString);
+
+                const reDotNoQuote = new RegExp(dotNoQuoteRE, "g");
+                for (let match of vizTmlSearchString.matchAll(reDotNoQuote)) {
+                    console.log("Match found for reDotNoQuote pattern: ", reDotNoQuote);
+                    console.log(match);
+                    // Skip the replacement if it is a DATE type, because the .{timeBucket} syntax is used on Dates, which is different from an equality assignment
+                    if (filterFieldType != 'DATE'){
+                        updatedTml = vizTmlSearchString.replace(reDotNoQuote, "");
+                        console.log("Updated TML after replacement: ", updatedTml);
+                        // Replace with the clause removed
+                        vizTmlSearchString = updatedTml;
+                    }
+                }
+               
+
+            }
+
+            // Clean any whitespace that might have resulted
+            vizTmlSearchString = vizTmlSearchString.trim();
+
+            // 9. Convert Final Filters into TML Filter Clauses and add them to create Final TML Search String
+            for(let i=0, len = finalFilters.length; i<len; i++){
+                let filterSearchQuery = convertLiveboardFilterToTmlSearch(finalFilters[i].fieldName, finalFilters[i].dataType, finalFilters[i].operator, finalFilters[i].values, finalFilters[i].timeBucket);
+                // console.log(filterSearchQuery);
+                if (filterSearchQuery != ""){
+                    vizTmlSearchString += " " + filterSearchQuery
+                }
+            }
+            
+            // Clean any whitespace that might have resulted
+            vizTmlSearchString = vizTmlSearchString.trim();
+            console.log("Final vizTmlSearchString with filter clauses added: ", vizTmlSearchString);
+
+            // 10. Append any additional fields to always be included on the TML Search String
+            let additionalFieldNameToAdd = ''; // Formatted as  [{field name}], also add sort clause if expecting large result sets
+            if (additionalFieldNameToAdd != ''){
+                vizTmlSearchString += " " + additionalFieldNameToAdd;
+            }
+
+            // function returns vizTmlSearch string to be fed into Step 11 - Search Query API call
+            return vizTmlSearchString;
+        });
+
+}
+
+/*
+ * Specific function to call the restApiCallV2 for Search Data, allowing for easy reuse
+*/
+async function callSearchDataApi(tmlSearchString, datasourceId, recordOffset, recordSize){
+    // 8. Issue Search Data REST API call using the final Search Query
+    console.log("Using following Search String for Search Data API: ", tmlSearchString);
+    let searchDataEndpoint = 'searchdata';
+    let apiRequestForSearchData = { 
+          "query_string": tmlSearchString
+        , "logical_table_identifier": datasourceId
+        , data_format: "COMPACT"
+        , record_offset: recordOffset
+        , record_size: recordSize
+    }
+    return restApiCallV2(searchDataEndpoint, 'POST', apiRequestForSearchData);   
+}
+
+/*
+* END - Functions for use in the Custom Action Event Listener above
+*/
+
+</script>
+
+<script>
+    // Get the modal
+    var modal = document.getElementById("myModal2");
+
+    // Get the button that opens the modal
+    var btn = document.getElementById("myBtn");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    // When the user clicks on the button, open the modal
+    //btn.onclick = function() {
+    //modal.style.display = "block";
+    //}
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+    modal.style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
+</script>
+</body>

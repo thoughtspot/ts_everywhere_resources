@@ -9,7 +9,7 @@ import {
   init,
   Action,
   AuthType,
-  PinboardEmbed,
+  LiveboardEmbed,
   AppEmbed,
 } from 'https://unpkg.com/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
 
@@ -23,10 +23,10 @@ const tsURL = "https://try.thoughtspot.cloud/";  // Set to the URL for your syst
 const embed = () => {
   tsInit();
   //embedVisualizations();
-  embedPinboard();
+  embedLiveboard();
 }
 
-const embedPinboard = () => {
+const embedLiveboard = () => {
 
   const embed = new AppEmbed("#full-embed", {
     frameParams: {},
@@ -68,7 +68,7 @@ const embedVisualizations = () => {
 
   for (let idx = 0; idx < visualizationIDs.length; idx++) {
     console.log(`embedding ${visualizationIDs[idx]}`);
-    const embed = new PinboardEmbed(`#embed${idx}`, {
+    const embed = new LiveboardEmbed(`#embed${idx}`, {
     frameParams: {},
       pinboardId: liveboardID,
       vizId: visualizationIDs[idx]

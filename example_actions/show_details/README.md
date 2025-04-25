@@ -6,7 +6,7 @@ This example shows how to use a custom action in a context menu to show a pre-de
 
 For this example, you'll need a custom action to add to the pinboard.  In this example, the action is called 'show-more' and is configured as shown in the image.  This action is set to be on the context menu and not be added globally.
 
-![Custom action configuration](ca_custom_action.png)
+![Custom action configuration](images/ca_custom_action.png)
 
 If you use a different id, you'll need to change the code:
 
@@ -18,19 +18,19 @@ Create a pinboard to use for the main visualization and the details.  By creatin
 
 The following pinboard contains a map of US States with sales.  There is also a pin that shows top sales.  The map is going to be the main visualization and then the sales column chart is the detail.
 
-![Map of sales](ca_pinboard.png)
+![Map of sales](images/ca_pinboard.png)
 
 When you embed the map visualization, you can then click on the `show-details` link and the details will pop up as seen in the next two images.
 
-![Map with context link](ca_selection.png)
-![Pop-up of details](ca_popup.png)
+![Map with context link](images/ca_selection.png)
+![Pop-up of details](images/ca_popup.png)
 
 ## Solution
 
 First, embed a visualization into the application as follows.  You can add additional flags and handlers if needed.
 
 ~~~
-  const embed = new PinboardEmbed("#embed", {
+  const embed = new LiveboardEmbed("#embed", {
     frameParams: {height: "70vw", width: "95vw"},
      pinboardId: "32f36678-025d-4c30-80de-0b47f344d688",
      vizId: "9ccd4a61-1376-4813-87d3-ea0f70bbd242",
@@ -47,7 +47,7 @@ First, embed a visualization into the application as follows.  You can add addit
 
 The pinboardId is the ID for the pinboard and the vizId is the ID for the specific visualization.  You can find these IDs using the Developer Playground.
 
-The `showPayload` function (located in the `custom-actions.js` file) This function simply uses another PinboardEmbed component to get the detail visualization.  The detail visualization displays in a modal box using CSS.  
+The `showPayload` function (located in the `custom-actions.js` file) This function simply uses another LiveboardEmbed component to get the detail visualization.  The detail visualization displays in a modal box using CSS.  
 
 ~~~
 const showPayload = (payload) => {
@@ -56,7 +56,7 @@ const showPayload = (payload) => {
   // Only gets the first column value.
   const filter = pinboardContextData.data[pinboardContextData.columnNames[0]];
   // Now show the details with the filter applied in a popup.
-  const embed = new PinboardEmbed("#embed-popup", {
+  const embed = new LiveboardEmbed("#embed-popup", {
     frameParams: { width: "80vw", height: "60vw" },
     disabledActions: [],
     disabledActionReason: "Reason for disabling",

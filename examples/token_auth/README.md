@@ -1,4 +1,4 @@
-# Get Token Service
+# Token Request Service demo in Flask (Python)
 
 This project is a simple Flask service that will act as a trusted authentication service for ThoughtSpot.  
 
@@ -36,6 +36,9 @@ This service should be deployed to an environment that is
 
 ### Run
 You should now be able to run `bash start_flask.sh` to start the server.  The server listens on port 5000. 
+
+### Troubleshoot
+The `trusted_auth_tester.html` page in this repo can be used to isolate issues while implementing Trusted Authentication. You must have the correct CORS and CSP settings to allow embedding from wherever you host this tester page.
 
 ## Notes
 
