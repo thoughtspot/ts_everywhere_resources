@@ -3,20 +3,21 @@
  * It's recommended to refer to the documentation and Developer Playground to try to get it working before
  * using this file.
  */
-import {showDetails} from "./custom-actions.js";
-
 import {
   init,
   Action,
   AppEmbed,
   AuthType,
   EmbedEvent,
-  Page,
+  HostEvent,
   LiveboardEmbed,
+  Page,
+  RuntimeFilterOp,
   SearchEmbed,
+// } from './tsembed.es.js';
 } from 'https://unpkg.com/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
 
-import {getSearchData} from "./rest-api.js";
+import {LiveboardContextActionData} from "./dataclasses.js";
 
 // TODO - set the following for your URL.
 const tsURL = "https://training.thoughtspot.cloud";
@@ -25,21 +26,15 @@ const tsURL = "https://training.thoughtspot.cloud";
 
 // Create and manage the login screen.
 const onLogin = () => {
-  // The following can be used if you want to use AuthType.Basic
-  //const username = document.getElementById('username').value;
-  //const password = document.getElementById('password').value;
-
   // TODO add the init() to set up the SDK interface.
 
   hideDiv('login');
-  showDiv('landing-page');
+  showMainApp();
 }
 
-// Clears out the page and shows the main app.
+// Shows the main app.
 // This can be called from any page to make sure the state is correct.
 const showMainApp = () => {
-  clearEmbed(); // just to be sure.
-  hideDiv('landing-page');
   showDiv('main-app');
 }
 
@@ -50,6 +45,7 @@ const onSearch = () => {
 
   // TODO replace the following with a SearchEmbed component and render.
   document.getElementById("embed").innerHTML = "<p class='warning'>Search not yet embedded.</p>";
+
 }
 
 const onLiveboard = () => {
@@ -57,6 +53,7 @@ const onLiveboard = () => {
 
   // TODO replace the following with a LiveboardEmbed component and render.
   document.getElementById("embed").innerHTML = "<p class='warning'>Liveboard not yet embedded.</p>";
+
 }
 
 const onVisualization = () => {
@@ -64,6 +61,7 @@ const onVisualization = () => {
 
   // TODO replace the following with a LiveboardEmbed component and render.
   document.getElementById("embed").innerHTML = "<p class='warning'>Visualization not yet embedded.</p>";
+
 }
 
 // Embed the full application.
@@ -74,97 +72,27 @@ const onFull = () => {
   document.getElementById("embed").innerHTML = "<p class='warning'>Full app not yet embedded.</p>";
 }
 
-// Embed a visualization with custom action.
+// Embed with a custom action.
 const onCustomAction = () => {
   showMainApp();
 
-  // TODO replace the following with an AppEmbed component and render.
+  // TODO replace the following with an AppEmbed component for showing a popup.
   document.getElementById("embed").innerHTML = "<p class='warning'>Custom action not yet embedded.</p>";
 }
 
-// Embed an example of using the SearchData api and highcharts.
-const onCustomChart = () => {
-  showMainApp();
+// Show a pop-up with the product sales for the state selected.
+const showDetails = (payload) => {
+  const pinboardContextData = LiveboardContextActionData.createFromJSON(payload);
 
-  const worksheetID = "1b1c237d-9de8-4542-bf1f-0c3157ddb8d2";  // GUID for Sample Retail - Apparel - Developer WS
-  const search = "[sales] [product type] [product] top 15";
+  // Only gets the first column value.
+  const filter = pinboardContextData.data[pinboardContextData.columnNames[0]];
 
-  getSearchData(tsURL, worksheetID, search).then(data => {
-    console.log(data);
+  // Now show the details with the filter applied in a popup.
+  // TODO - add the code to show the popup with the runtime filter.
 
-    // Get the indexes of the columns in the data.
-    const salesIdx = data.columnNames.findIndex(v => v == 'Total Sales');
-    const productTypeIdx = data.columnNames.findIndex(v => v == 'Product Type');
-    const productIdx = data.columnNames.findIndex(v => v == 'Product');
-
-    // convert the resulting data to the series for the HighChart.  Format is:
-    // [
-    //   { name: '<product type>', data: [{ name: <product>, value: <sales> }, ... ]}
-    //   { name: '<product type>', data: [{ name: <product>, value: <sales> }, ... ]}
-    // ]
-
-    const series = {}
-    for (const r of data.data) {
-      const productType = r[productTypeIdx]
-      if (! Object.keys(series).includes(productType)) {
-        series[productType] = []
-      }
-      // Combines all the data items to the key for each series.
-      series[productType].push({ name: r[productIdx], value: r[salesIdx]/1000});
-    }
-
-    // Now need to as the chart series.
-    const chartSeries = []
-    for (const productType of Object.keys(series)) {
-      chartSeries.push({name: productType, data: series[productType]})
-    }
-
-    // Render the chart.
-    Highcharts.chart('embed', {
-      chart: {
-        type: 'packedbubble'
-        /* height: '80%'*/
-      },
-      title: {
-        text: 'Sales of product by product type'
-      },
-      tooltip: {
-        useHTML: true,
-        pointFormat: '<b>{point.name}:</b> ${point.value:.1f}M</sub>'
-      },
-      plotOptions: {
-        packedbubble: {
-          minSize: '20%',
-          maxSize: '40%',
-          zMin: 0,
-          zMax: 1000,
-          layoutAlgorithm: {
-            gravitationalConstant: 0.05,
-            splitSeries: true,
-            seriesInteraction: false,
-            dragBetweenSeries: true,
-            parentNodeLimit: true
-          },
-          dataLabels: {
-            enabled: true,
-            format: '{point.name}',
-            filter: {
-              property: 'y',
-              operator: '>',
-              value: 250
-            },
-            style: {
-              color: 'black',
-              textOutline: 'none',
-              fontWeight: 'normal'
-            }
-          }
-        }
-      },
-      series: chartSeries
-    });
-  });
-
+  // display the model box.
+  const detailsElement = document.getElementById('show-data');
+  detailsElement.style.display = 'block';
 }
 
 //----------------------------------- Functions to manage the UI. -----------------------------------
@@ -186,12 +114,6 @@ const clearEmbed = () => {
   div.innerHTML = "";
 }
 
-// closes the modal element when the close is selected.
-const closeModal = () => {
-  const showDataElement = document.getElementById('show-data')
-  showDataElement.style.display = 'none';  // hide the box.
-}
-
 //---------------------------- connect UI to code and start the app. ----------------------------
 
 // Show the URL to connect to.
@@ -199,14 +121,6 @@ document.getElementById('ts-url').innerText = 'ThoughtSpot Server: ' + tsURL;
 
 // Hook up the events to the buttons and links.
 document.getElementById('login-button').addEventListener('click', onLogin);
-document.getElementById('close-modal').addEventListener('click', closeModal);
-
-// Events for buttons
-document.getElementById('search-button').addEventListener('click', onSearch);
-document.getElementById('liveboard-button').addEventListener('click', onLiveboard);
-document.getElementById('viz-button').addEventListener('click', onVisualization);
-document.getElementById('full-app-button').addEventListener('click', onFull);
-document.getElementById('custom-chart-button').addEventListener('click', onCustomChart);
 
 // Events for nav bar
 document.getElementById('search-link').addEventListener('click', onSearch);
@@ -214,4 +128,13 @@ document.getElementById('liveboard-link').addEventListener('click', onLiveboard)
 document.getElementById('visualization-link').addEventListener('click', onVisualization);
 document.getElementById('full-application-link').addEventListener('click', onFull);
 document.getElementById('custom-action-link').addEventListener('click', onCustomAction);
-document.getElementById('custom-chart-link').addEventListener('click', onCustomChart);
+
+//---------------------------- Controls for the modal popup ----------------------------
+
+const closeModal = () => {
+  const showDataElement = document.getElementById('show-data')
+  showDataElement.style.display = 'none';  // hide the box.
+}
+
+document.getElementById('close-modal').addEventListener('click', closeModal);
+

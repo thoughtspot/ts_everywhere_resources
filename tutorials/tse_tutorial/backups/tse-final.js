@@ -9,14 +9,13 @@ import {
   AppEmbed,
   AuthType,
   EmbedEvent,
-  HostEvent,
   LiveboardEmbed,
   Page,
   RuntimeFilterOp,
   SearchEmbed,
-} from 'https://unpkg.com/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
+} from './tsembed.es.js';
+// } from 'https://unpkg.com/@thoughtspot/visual-embed-sdk/dist/tsembed.es.js';
 
-import {getSearchData} from "./rest-api.js";
 import {LiveboardContextActionData} from "./dataclasses.js";
 
 // TODO - set the following for your URL.
@@ -36,14 +35,12 @@ const onLogin = () => {
   });
 
   hideDiv('login');
-  showDiv('landing-page');
+  showMainApp();
 }
 
 const showMainApp = () => {
-  // Clears out the page and shows the main app.
+  // Shows the main app.
   // This can be called from any page to make sure the state is correct.
-  clearEmbed(); // just to be sure.
-  hideDiv('landing-page');
   showDiv('main-app');
 }
 
@@ -77,7 +74,8 @@ const onLiveboard = () => {
 
   const embed = new LiveboardEmbed("#embed", {
       frameParams: {},
-      pinboardId: "9c3d26af-cf1b-4e89-aa42-f60d34983827",  // TODO - set to your liveboard ID.
+      liveboardV2: true,
+      liveboardId: "fda23eef-4edc-4a1a-884c-1570d2b3b079",  // TODO - set to your liveboard ID.
       disabledActions: [Action.DownloadAsPdf],
       disabledActionReason: 'Enterprise feature.',
       hiddenActions: [Action.LiveboardInfo]
@@ -91,8 +89,9 @@ const onVisualization = () => {
 
   const embed = new LiveboardEmbed("#embed", {
     frameParams: {},
-    liveboardId: "9c3d26af-cf1b-4e89-aa42-f60d34983827",
-    vizId: "9564b208-39b9-4349-9f06-3c989a9e1863",
+    liveboardV2: true,
+    liveboardId: "fda23eef-4edc-4a1a-884c-1570d2b3b079",  // TODO - set to your liveboard ID.
+    vizId: "dcbf0121-dc91-40ae-9a5c-e480d47eebfa",
   });
 
   embed.render();
@@ -104,6 +103,7 @@ const onFull = () => {
 
   const embed = new AppEmbed('#embed', {
     frameParams: {},
+    liveboardV2: false,
     showPrimaryNavbar: false,  // set to true to show the ThoughtSpot navbar
     pageId: Page.Home, // loads the Home tab, but you can start on any main tab - try Page.Search
     disabledActions: [], // list of any actions you don't want the users to use, but still see
@@ -114,124 +114,48 @@ const onFull = () => {
   embed.render();
 }
 
-// Embed a custom action.
+// Embed with a custom action.
 const onCustomAction = () => {
   showMainApp();
 
   const embed = new LiveboardEmbed("#embed", {
-    frameParams: {},
-    pinboardId: "b504e160-3025-4508-a76a-1beb1f4b5eed",
+    liveboardId: "e40c0727-01e6-49db-bb2f-5aa19661477b",
+    vizId: "8d2e93ad-cae8-4c8e-a364-e7966a69a41e",
   });
 
   embed
-  .on(EmbedEvent.CustomAction, (payload) => {
-    // The id is defined when creating the Custom Action in ThoughtSpot. Checking id attribute allows correct routing of multiple Custom Actions
-    if (payload.id === 'filter-content') {
-      filterData(embed, payload);
-    }
-  })
-  .render();
-}
-
-// Updates the global filterValues array, then re-runs the embedLiveboard to reload the original Liveboard with the updated values in the runtimeFilters
-const filterData = (embed, payload) => {
-  const actionData = LiveboardContextActionData.createFromJSON(payload);
-  const columnNameToFilter = actionData.columnNames[0];
-  const filterValues = [];
-  filterValues.push(actionData.data[columnNameToFilter][0]);
-
-  embed.trigger(HostEvent.UpdateRuntimeFilters, [{
-    columnName: columnNameToFilter,
-    operator: RuntimeFilterOp.EQ,
-    values: filterValues,
-  }]);
-}
-
-
-// Embed an example of using the SearchData api and highcharts.
-const onCustomChart = () => {
-  showMainApp();
-
-  const worksheetID = "1b1c237d-9de8-4542-bf1f-0c3157ddb8d2";  // GUID for Sample Retail - Apparel - Developer WS
-  const search = "[sales] [product type] [product] top 15";
-
-  getSearchData(tsURL, worksheetID, search).then(data => {
-    console.log(data);
-
-    // Get the indexes of the columns in the data.
-    const salesIdx = data.columnNames.findIndex(v => v == 'Total Sales');
-    const productTypeIdx = data.columnNames.findIndex(v => v == 'Product Type');
-    const productIdx = data.columnNames.findIndex(v => v == 'Product');
-
-    // convert the resulting data to the series for the HighChart.  Format is:
-    // [
-    //   { name: '<product type>', data: [{ name: <product>, value: <sales> }, ... ]}
-    //   { name: '<product type>', data: [{ name: <product>, value: <sales> }, ... ]}
-    // ]
-
-    const series = {}
-    for (const r of data.data) {
-      const productType = r[productTypeIdx]
-      if (! Object.keys(series).includes(productType)) {
-        series[productType] = []
+    .on(EmbedEvent.CustomAction, payload => {
+      if (payload.id === 'show-details' || payload.data.id === 'show-details') {
+        showDetails(payload);
       }
-      // Combines all the data items to the key for each series.
-      series[productType].push({ name: r[productIdx], value: r[salesIdx]/1000});
-    }
-
-    // Now need to as the chart series.
-    const chartSeries = []
-    for (const productType of Object.keys(series)) {
-      chartSeries.push({name: productType, data: series[productType]})
-    }
-
-    // Render the chart.
-    Highcharts.chart('embed', {
-      chart: {
-        type: 'packedbubble'
-        /* height: '80%'*/
-      },
-      title: {
-        text: 'Sales of product by product type'
-      },
-      tooltip: {
-        useHTML: true,
-        pointFormat: '<b>{point.name}:</b> ${point.value:.1f}M</sub>'
-      },
-      plotOptions: {
-        packedbubble: {
-          minSize: '20%',
-          maxSize: '40%',
-          zMin: 0,
-          zMax: 1000,
-          layoutAlgorithm: {
-            gravitationalConstant: 0.05,
-            splitSeries: true,
-            seriesInteraction: false,
-            dragBetweenSeries: true,
-            parentNodeLimit: true
-          },
-          dataLabels: {
-            enabled: true,
-            format: '{point.name}',
-            filter: {
-              property: 'y',
-              operator: '>',
-              value: 250
-            },
-            style: {
-              color: 'black',
-              textOutline: 'none',
-              fontWeight: 'normal'
-            }
-          }
-        }
-      },
-      series: chartSeries
-    });
-  });
-
+    })
+    .render();
 }
+
+// Show a pop-up with the product sales for the state selected.
+const showDetails = (payload) => {
+  const pinboardContextData = LiveboardContextActionData.createFromJSON(payload);
+
+  // Only gets the first column value.
+  const filter = pinboardContextData.data[pinboardContextData.columnNames[0]];
+
+  // Now show the details with the filter applied in a popup.
+  const popupEmbed = new LiveboardEmbed("#show-details", {
+    liveboardId: "e40c0727-01e6-49db-bb2f-5aa19661477b",
+    vizId: "96db6db8-662a-45b5-bc70-00341d75846b",
+    runtimeFilters: [{
+      columnName: 'state',
+      operator: RuntimeFilterOp.EQ,
+      values: [filter]
+    }],
+  });
+  popupEmbed.render();
+
+  // display the model box.
+  const detailsElement = document.getElementById('show-data');
+  detailsElement.style.display = 'block';
+}
+
 
 //----------------------------------- Functions to manage the UI. -----------------------------------
 
@@ -252,12 +176,6 @@ const clearEmbed = () => {
   div.innerHTML = "";
 }
 
-// closes the modal element when the close is selected.
-//const closeModal = () => {
-//  const showDataElement = document.getElementById('show-data')
-//  showDataElement.style.display = 'none';  // hide the box.
-//}
-
 //---------------------------- connect UI to code and start the app. ----------------------------
 
 // Show the URL to connect to.
@@ -265,15 +183,6 @@ document.getElementById('ts-url').innerText = 'ThoughtSpot Server: ' + tsURL;
 
 // Hook up the events to the buttons and links.
 document.getElementById('login-button').addEventListener('click', onLogin);
-//document.getElementById('close-modal').addEventListener('click', closeModal);
-
-// Events for buttons
-document.getElementById('search-button').addEventListener('click', onSearch);
-document.getElementById('liveboard-button').addEventListener('click', onLiveboard);
-document.getElementById('viz-button').addEventListener('click', onVisualization);
-document.getElementById('full-app-button').addEventListener('click', onFull);
-document.getElementById('custom-action-button').addEventListener('click', onCustomAction);
-document.getElementById('custom-chart-button').addEventListener('click', onCustomChart);
 
 // Events for nav bar
 document.getElementById('search-link').addEventListener('click', onSearch);
@@ -281,4 +190,12 @@ document.getElementById('liveboard-link').addEventListener('click', onLiveboard)
 document.getElementById('visualization-link').addEventListener('click', onVisualization);
 document.getElementById('full-application-link').addEventListener('click', onFull);
 document.getElementById('custom-action-link').addEventListener('click', onCustomAction);
-document.getElementById('custom-chart-link').addEventListener('click', onCustomChart);
+
+//---------------------------- Controls for the modal popup ----------------------------
+
+const closeModal = () => {
+  const showDataElement = document.getElementById('show-data')
+  showDataElement.style.display = 'none';  // hide the box.
+}
+
+document.getElementById('close-modal').addEventListener('click', closeModal);

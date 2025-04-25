@@ -3,7 +3,7 @@
  * around with colors, fonts, etc.
  */
 body {
-  font-family: Optimo-Plain,Helvetica Neue,Helvetica,Arial,sans-serif;
+  font-family: Optimo-Plain, Helvetica Neue, Helvetica, Arial, sans-serif;
   text-after-overflow: center;
   background-color: white;
   color: #1d232f;
@@ -16,20 +16,13 @@ h1 {
 #header {
   height: 50px;
   line-height: 50px;
-  padding-bottom: 20px;
-  background-color: rgb(28,78,169);
-}
-
-.shop-logo {
-/*
-  width:;
-  height:;
-*/
+  padding-bottom: 10px;
+  background-color: rgb(28, 78, 169);
 }
 
 .use-case-name {
-  font-family: BB-Roller-Regular,Courrier,sans-serif;
-  font-size: 16px;
+  font-family: BB-Roller-Regular, Courrier, sans-serif;
+  font-size: 24px;
   color: white;
 }
 
@@ -61,6 +54,14 @@ h1 {
   background-color: #EAEDF2;
 }
 
+.instructions {
+  color: rgb(28, 78, 169);
+  font-weight: bold;
+  font-size: larger;
+  padding-left: 20px;
+  padding-top: 73px;
+}
+
 .sidenav {
   left: 0;
   background-color: white;
@@ -76,7 +77,7 @@ h1 {
 .sidenav a {
   padding: 8px 8px 8px 32px;
   text-decoration: none;
-  font-family: BB-Roller-Regular,Courrier,sans-serif;
+  font-family: BB-Roller-Regular, Courrier, sans-serif;
   font-size: 14px;
   /* color: #818181; */
   color: black;
@@ -104,10 +105,10 @@ h1 {
 }
 
 .tile-container {
-    flex-flow: row nowrap;
-    box-sizing: border-box;
-    padding: 10px;
-    flex: 0 1 auto;
+  flex-flow: row nowrap;
+  box-sizing: border-box;
+  padding: 10px;
+  flex: 0 1 auto;
 }
 
 .tile {
@@ -153,4 +154,54 @@ P.warning {
   font-weight: normal;
   font-style: italic;
   font-size: x-large;
+}
+
+/* Modal (background) */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  /* overflow: auto; */ /* Enable scroll if needed */
+  background-color: rgb(0, 0, 0); /* Fallback color */
+  background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+}
+
+/* Modal content/box */
+.modal-content {
+  background-color: #fefefe;
+  overflow: auto; /* Enable scroll if needed */
+  margin: 15% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 85%;
+  height: 100%;
+}
+
+#show-data {
+  height: 100%;
+  width: 100%;
+}
+
+#show-details {
+  height: 95%;
+  width: 100%;
+}
+
+/* The Close Button */
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
 }
