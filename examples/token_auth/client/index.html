@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'/>
+    <title>TS Everywhere Tutorial</title>
+    <link rel='icon' href='TS.png' />
+    <link rel='stylesheet' href='tse.css' />
+</head>
+<body>
+    <div id="header">
+        <span class='page-title'>Sample Token Client</span>
+    </div>
+    <div id='login' class='visible'>
+        <form id='login-form'>
+            <span id='ts-url'></span>
+            <br/>
+            <span id='token-url'></span>
+            <br/>
+            <div class="form-group">
+              <label for='username'>Username: </label>
+              <input type='text' id='username' size='50'/>
+            </div>
+            <br/>
+            <p>Token Server should be the full name without a trailing slash, e.g. https://mytoken.mycompany.com</p>
+            <button id='login-button' type='button' class="go-button">Login</button>
+        </form>
+    </div>
+    <div id='main-app'>
+        <div id='embed'></div>
+    </div>
+    <script src='tse.js' type='module'></script>
+</body>
+</html>

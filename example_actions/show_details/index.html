@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'/>
+    <title>Show More Details</title>
+    <link rel='stylesheet' href='../../css/tse.css' />
+    <link rel='stylesheet' href='custom-actions.css' />
+</head>
+<body>
+    <!-- Used to show the data from actions. -->
+    <h1>Show More Details</h1>
+    <p>Right click on a state and select show-more to see more details for the state.</p>
+    <div id="show-data" class="modal">
+      <div class="modal-content">
+        <span id="close-modal" class="close">&times;</span>
+        <div id="embed-popup"></div>
+      </div>
+    </div>
+    <!-- The following is the object that embedded objects will be placed into.  Simply embed into #embed. -->
+    <div id='embed'></div>
+    <script src='tse.js' type='module'></script>
+</body>
+</html>

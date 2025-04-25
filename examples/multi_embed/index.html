@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'/>
+    <title>Multi Embed</title>
+    <link rel='stylesheet' href='tse.css' />
+</head>
+<body>
+    <div>
+        <h1>Embedding Multiple TS Visualizations</h1>
+        <p align='center' id='thoughtspot-server'>ThoughtSpot Server: </p>
+    </div>
+    <!-- The following is the object that embedded objects will be placed into.  Simply embed into #embed. -->
+    <div id="full-embed">embed here</div>
+    <div class="embed-container">
+        <div id='embed0' class='embed'></div>
+        <div id='embed1' class='embed'></div>
+        <div id='embed2' class='embed'></div>
+        <div id='embed3' class='embed'></div>
+    </div>
+    <!-- The following imports the module for the sample app. -->
+    <script src='tse.js' type='module'></script>
+</body>
+</html>

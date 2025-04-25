@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'/>
+    <title>Simple Embed</title>
+    <link rel='stylesheet' href='../../css/tse.css' />
+</head>
+<body>
+    <div>
+        <h1>Embedding ThoughtSpot using the Visual SDK</h1>
+        <p align='center' id='thoughtspot-server'>ThoughtSpot Server: </p>
+    </div>
+    <div>
+        <!-- TODO set to have your visualizations -->
+        <label for="select-visualizations">Select time intervals:</label>
+        <select id="select-visualizations">
+            <option value="7e242033-2db1-41e4-ae2c-dd1488019059">Daily</option>
+            <option value="8bf42ab8-b9f5-4c0f-aaeb-5cf1d1153ba1">Weekly</option>
+            <option value="110edd3d-8215-4d07-a880-b64de81bca89">Monthly</option>
+            <option value="87b35e25-fd14-43a7-80de-815939c62e9d">Quarterly</option>
+        </select>
+    </div>
+    <!-- The following is the object that embedded objects will be placed into.  Simply embed into #embed. -->
+    <div id='embed'></div>
+    <!-- The following imports the module for the sample app. -->
+    <script src='tse.js' type='module'></script>
+</body>
+</html>

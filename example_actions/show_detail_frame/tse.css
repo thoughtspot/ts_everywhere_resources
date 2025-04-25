@@ -1,0 +1,44 @@
+html, body{
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: Optimo-Plain,Helvetica Neue,Helvetica,Arial,sans-serif;
+  text-after-overflow: center;
+  background-color: white;
+  color: #1d232f;
+}
+
+h1 {
+  background-color: rgb(28,78,169);
+  color: white;
+}
+
+#embed {
+  height: 85vh;
+  width: 100vw;
+}
+
+#details {
+  display: None;  /* Hide by default. */
+  height: 30vh;
+  width: 100vw;
+  scroll-behavior: auto;
+  overflow-y: scroll;
+}
+
+/* For the results table. */
+/* Standard table formatting */
+table {
+  border-collapse: collapse;
+  border: 1px solid black;
+  width: 90vw;
+  align-content: center;
+  font-family: sans-serif;
+}
+
+th, td {
+  border: 1px solid black;
+  padding: 10px;
+}
