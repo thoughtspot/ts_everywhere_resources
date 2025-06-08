@@ -1,0 +1,6 @@
+  highcharts
+  liveboards
+  master
+  new-custom-action
+  popup-action
+  v2-updates
